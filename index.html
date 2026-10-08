@@ -125,10 +125,14 @@ textarea{resize:vertical}
 .rate{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin:4px 0 12px}
 .rate button{padding:8px 0}
 .rate .on,.chips .on{background:var(--amber);border-color:var(--amber);color:#000}
-.clock{font-size:64px;font-weight:600;text-align:center;margin:18px 0 8px;letter-spacing:.04em}
-.clock.held{color:var(--dim)}
-.prog{height:4px;background:var(--line2);margin-bottom:14px}.prog i{display:block;height:100%;width:0;background:var(--amber)}
-.pace{text-align:center;color:var(--amber);letter-spacing:.24em;min-height:1.5em}
+.bub{position:relative;width:260px;max-width:100%;aspect-ratio:1;margin:18px auto 8px}
+.bub svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.bub circle{fill:none;stroke-width:2}.bub .rt{stroke:var(--line2)}.bub .rp{stroke:var(--amber);stroke-linecap:round}
+.ball{position:absolute;inset:16px;border-radius:50%;border:1px solid rgba(255,176,0,.55);background:radial-gradient(circle at 50% 42%,rgba(255,176,0,.34),rgba(255,176,0,.07) 68%,transparent);box-shadow:0 0 40px rgba(255,176,0,.12);transform:scale(.45);will-change:transform}
+.cue{position:absolute;inset:0;display:grid;place-content:center;gap:4px;text-align:center;color:var(--amber);letter-spacing:.24em;font-weight:600}
+.cue em{font-style:normal;font-size:28px;letter-spacing:0;color:var(--tx)}
+.clock{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;letter-spacing:.04em}
+.held .ball{opacity:.45}.held .cue,.clock.held{color:var(--dim)}
 .c{text-align:center}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 #toast.on{opacity:1}
@@ -140,7 +144,6 @@ textarea{resize:vertical}
   .cd{min-height:50px;padding:3px}.cd em{display:none}.cd b{font-size:10px}
   .eqs{gap:14px}
   .rate{grid-template-columns:repeat(5,minmax(0,1fr))}
-  .clock{font-size:52px}
 }
 </style>
 </head>
@@ -187,6 +190,8 @@ const PACE={
   'Physiological sigh':[['INHALE',2],['TOP UP',1],['EXHALE',6]],
   '4-7-8':[['INHALE',4],['HOLD',7],['EXHALE',8]]
 };
+// everything without its own pattern breathes slow and easy: 4 in, 6 out
+const CALM=[['INHALE',4],['EXHALE',6]];
 const ALIAS={
   at:['date','when','datetime','timestamp','time (local)','start time','started at'],
   kind:['practice','type','kind','activity','category'],
@@ -451,7 +456,7 @@ function techs(k){
 /* ---------- guided session ----------
    START: pick practice + length, optionally rate "before". The timer runs off the clock and is kept in
    localStorage, so a sleeping screen or a reload doesn't lose it. At the end it chimes and asks for "after". */
-let R=null,RI=0,WL=null,AC=null;
+let R=null,RI=0,RA=0,WL=null,AC=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
 const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
 const elapsed=()=>(R.paused??Date.now())-R.t0;
@@ -474,7 +479,17 @@ function chime(){
 }
 async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('screen');WL?.addEventListener('release',()=>WL=null)}else if(!on&&WL){WL.release();WL=null}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R&&R.done==null)wake(true)});
-function clearRun(){clearInterval(RI);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}wake(false)}
+// where the bubble is at ms into the session: cue, seconds left in the phase, scale (.45 empty – 1 full)
+function breath(ms){
+  const P=PACE[R.tech]||CALM;let x=ms/1000%P.reduce((a,p)=>a+p[1],0),s=.45;
+  for(const[c,d]of P){
+    const to=c==='INHALE'?1:c==='TOP UP'?1.1:c==='EXHALE'?.45:s;
+    if(x<d)return {c,left:Math.ceil(d-x),s:s+(to-s)*(1-Math.cos(Math.PI*x/d))/2};
+    x-=d;s=to;
+  }
+  return {c:'',left:0,s};
+}
+function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}wake(false)}
 
 function startForm(){
   const last=S.log.reduce((a,b)=>!a||b.at>a.at?b:a,null),kind=U.kind!=='all'?U.kind:last?.kind||'M';
@@ -488,7 +503,7 @@ function startForm(){
   <div class="chips">${[5,10,15,20,30].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${mins}"></div>
   ${rpick('pre','State before (optional)')}
   <datalist id="tch"></datalist>
-  <div class="fa2"><span class="dim">Ends with a chime</span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  <div class="fa2"><span class="dim">Breathe with the bubble</span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
   const f=$('#sf'),e=f.elements;
   const mark=()=>{f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));techs(e.kind.value)};
   f.addEventListener('click',ev=>{const b=ev.target.closest('[data-m]');if(b){e.mins.value=b.dataset.m;mark()}});
@@ -502,17 +517,20 @@ function startForm(){
 }
 function runView(){
   dlg.innerHTML=`<div><h3>${KIND[R.kind].toUpperCase()}${R.tech?' // '+esc(R.tech).toUpperCase():''}</h3>
-  <div class="clock" id="clk"></div><div class="prog"><i id="pg"></i></div><div class="pace" id="pc"></div>
+  <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
+   <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
+  <div class="clock" id="clk"></div>
   <p class="dim c">${R.target?`${fm(R.target)} session · ends with a chime`:'Open session · finish when ready'}</p>
   <div class="fa2"><button type="button" id="rd">DISCARD</button><button type="button" id="rp">${R.paused?'RESUME':'PAUSE'}</button><button type="button" class="pri" id="rf">FINISH</button></div></div>`;
   const tick=()=>{
     const el=elapsed()/60000;if(R.target&&el>=R.target)return endRun(true);
-    $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);
-    if(R.target)$('#pg').style.width=(el/R.target*100).toFixed(2)+'%';
-    const P=PACE[R.tech];let cue=R.paused?'PAUSED':'';
-    if(P&&!R.paused){let x=elapsed()/1000%P.reduce((a,p)=>a+p[1],0);for(const[c,d]of P){if(x<d){cue=`${c} ${Math.ceil(d-x)}`;break}x-=d}}
-    $('#pc').textContent=cue;
+    $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);$('#bub').classList.toggle('held',!!R.paused);
+    if(R.target)$('#pg').setAttribute('stroke-dasharray',`${(el/R.target*100).toFixed(2)} 100`);
+    const b=breath(elapsed());$('#pc').innerHTML=R.paused?'PAUSED':`${b.c}<em>${b.left}</em>`;
   };
+  // the bubble moves every frame; the clock and cue only need a few updates a second
+  const anim=()=>{const el=$('#ball');if(!R||R.done!=null||!el)return;el.style.transform=`scale(${breath(elapsed()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  cancelAnimationFrame(RA);RA=requestAnimationFrame(anim);
   $('#rp').onclick=()=>{
     if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else R.paused=Date.now();
     $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
@@ -524,7 +542,7 @@ function runView(){
   wake(true);
 }
 function endRun(auto){
-  clearInterval(RI);RI=0;
+  clearInterval(RI);cancelAnimationFrame(RA);RI=0;
   R.done=auto?R.target:Math.max(.1,Math.round(elapsed()/6000)/10);
   if(auto){chime();navigator.vibrate?.([200,120,200])}
   keepRun();wake(false);wrapForm();
