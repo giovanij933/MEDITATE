@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070707">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MIND">
+<title>ISIONXXX // MIND</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#070707;--panel:#0c0c0c;--line:#1c1c1c;--line2:#2c2c2c;
+  --tx:#d9d5c8;--dim:#78746a;--amber:#ffb000;--green:#33ff66;--red:#ff4545;
+  --f:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0 auto;max-width:1440px;padding:calc(env(safe-area-inset-top) + 14px) 16px 48px;background:var(--bg);color:var(--tx);font:13px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+p{margin:0}
+button,select,input,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line2);border-radius:0;padding:7px 10px;outline:0}
+button{cursor:pointer;font-size:12px;letter-spacing:.06em}
+button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
+:focus-visible{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+.pri{background:var(--amber);border-color:var(--amber);color:#000;font-weight:600}
+.pri:hover{color:#000;filter:brightness(1.12)}
+.pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--dim)}.amb{color:var(--amber)}
+.bgp{background:var(--green)}.bgn{background:var(--red)}.bgd{background:var(--line2)}
+.r{text-align:right}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.brand{font-weight:600;font-size:15px;letter-spacing:.14em}
+.brand b{color:var(--amber)}
+.cur{display:inline-block;width:.6em;height:1.05em;margin-left:6px;background:var(--amber);vertical-align:-2px;animation:bl 1.1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.cur{animation:none}}
+.acts,.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bar{padding:14px 0}
+
+.g{display:grid;gap:12px;margin-bottom:12px}
+.g4{grid-template-columns:repeat(4,1fr)}.g21{grid-template-columns:2fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
+.card.gap{margin-bottom:12px}
+.h{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:12px}
+.h::before{content:'> ';color:var(--dim)}
+.k{font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.big{font-size:22px;font-weight:600;margin:2px 0 8px}
+.rowh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.empty{margin-bottom:12px;border-color:var(--amber)}
+.empty p+p{margin-bottom:12px}
+
+.gauge{display:block;width:150px;max-width:100%;margin:6px auto 10px}
+.gauge path{fill:none;stroke-width:9}
+.s0{stroke:var(--line2)}.sg{stroke:var(--green)}.sr{stroke:var(--red)}.sd{stroke:var(--dim)}
+.gauge text{fill:var(--tx);font:600 17px var(--f)}
+.lg{display:grid;grid-template-columns:14px 1fr auto 46px;align-items:center;padding:2px 0}
+.lg em{font-style:normal;color:var(--dim);text-align:right}
+.dot{display:inline-block;width:7px;height:7px}
+.ev{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0}
+.ev.rule{border-top:1px solid var(--line);margin-top:4px;padding-top:10px}
+.hb{height:20px;background:#111;margin:2px 0 10px}
+.hb i{display:block;height:100%}
+.sec{font-size:10px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;margin:12px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+.sec.first{border:0;margin-top:0;padding-top:0}
+
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.9fr);gap:4px}
+.dw{font-size:11px;color:var(--dim);text-align:center;padding:4px 0;letter-spacing:.08em;text-transform:uppercase}
+.cd{min-height:66px;padding:6px;border:1px solid var(--line);background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;letter-spacing:0;color:var(--dim);overflow:hidden}
+.cd b{font-size:12px}.cd em{font-style:normal;font-size:10px}
+.cd.we,.cd.off{background:repeating-linear-gradient(135deg,#0a0a0a 0 6px,#111 6px 7px)}
+.cd.off{border-color:transparent;opacity:.5}
+.cd.p{background:rgba(51,255,102,.07);border-color:rgba(51,255,102,.3)}
+.cd.n{background:rgba(255,69,69,.08);border-color:rgba(255,69,69,.3)}
+.cd.z{border-color:var(--line2)}
+.cd.now span{color:var(--amber)}
+.cd.sel{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
+.cd.wk{border-style:dashed}
+.calf{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.eqs{display:flex;gap:22px;flex-wrap:wrap}
+.eqs div{display:flex;flex-direction:column;gap:2px}
+.chart{display:block;width:100%;height:160px}
+.chart *{vector-effect:non-scaling-stroke}
+.chart .ln{fill:none;stroke-width:1.5}
+.chart .z{stroke:var(--line2);stroke-dasharray:4 4}
+.cg .ln{stroke:var(--green)}.cg .ar{fill:rgba(51,255,102,.1)}
+.cr .ln{stroke:var(--red)}.cr .ar{fill:rgba(255,69,69,.1)}
+.fp{fill:var(--green)}.fn{fill:var(--red)}.fa{fill:var(--amber)}
+.nd{height:160px;display:grid;place-items:center;color:var(--dim);letter-spacing:.14em;font-size:11px}
+.radar{display:block;width:100%;max-width:230px;margin:0 auto}
+.radar .rg{fill:none;stroke:var(--line2)}
+.radar .rv{fill:rgba(255,176,0,.16);stroke:var(--amber);stroke-width:1.5}
+.radar text{fill:var(--dim);font:10px var(--f);letter-spacing:.08em}
+
+.tw{overflow-x:auto}
+table{width:100%;min-width:980px;border-collapse:collapse}
+table.sm{min-width:560px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;font-weight:500;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+th.r,td.r{text-align:right}
+td button{padding:2px 7px;font-size:11px}
+footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;font-size:11px;color:var(--dim)}
+footer button{padding:3px 8px;font-size:11px}
+footer p{flex-basis:100%}
+
+dialog{background:var(--panel);color:var(--tx);border:1px solid var(--amber);padding:20px;width:min(560px,calc(100vw - 24px))}
+dialog::backdrop{background:rgba(0,0,0,.78)}
+dialog h3{margin:0 0 14px;font-size:13px;letter-spacing:.14em;color:var(--amber)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fgrid>button{align-self:end}
+label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+label input,label select,label textarea,dialog textarea{width:100%;font-size:13px;letter-spacing:0;text-transform:none;color:var(--tx)}
+textarea{resize:vertical}
+.fa2{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px}
+.fa2>span{margin-right:auto}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+
+@media(max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g21,.g3{grid-template-columns:1fr}}
+@media(max-width:560px){
+  body{padding-left:10px;padding-right:10px}
+  .g4,.fgrid{grid-template-columns:1fr}
+  .cd{min-height:50px;padding:3px}.cd em{display:none}.cd b{font-size:10px}
+  .eqs{gap:14px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">ISIONXXX <b>//</b> MIND<i class="cur"></i></div>
+  <div class="acts">
+    <button class="pri" data-a="add">+ SESSION</button>
+    <button data-a="imp">IMPORT</button>
+    <button data-a="note">NOTES</button>
+    <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
+  </div>
+</header>
+<div class="bar">
+  <select data-f="kind" aria-label="Practice"></select>
+  <select data-f="stat" aria-label="Outcome">
+    <option value="all">All outcomes</option><option value="up">Lift</option><option value="down">Drop</option>
+  </select>
+  <select data-f="range" aria-label="Range"></select>
+  <span id="scope" class="dim"></span>
+</div>
+<main id="app"></main>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status"></div>
+
+<script>
+'use strict';
+const KEY='isx.mind.v1', PAGE=20;
+const RANGES={today:'Today',week:'This week',month:'This month',all:'All time'};
+const KIND={M:'Meditation',B:'Breathwork',S:'Body Scan',V:'Visualization',F:'Focus',J:'Journaling'};
+const TECH={
+  M:['Breath counting','Open awareness','Noting'],
+  B:['Box 4-4-4-4','Resonance 5.5','Physiological sigh','4-7-8'],
+  S:['NSDR','Progressive relaxation','Head to toe'],
+  V:['Session rehearsal','Process','Outcome'],
+  F:['Single-point','Counting','Candle'],
+  J:['Evening review','Morning pages','Gratitude','Free write']
+};
+const ALIAS={
+  at:['date','when','datetime','timestamp','time (local)','start time','started at'],
+  kind:['practice','type','kind','activity','category'],
+  tech:['technique','method','preset'],
+  mins:['minutes','mins','duration','duration_min','length'],
+  pre:['before','state before','pre','mood before'],
+  post:['after','state after','post','mood after'],
+  depth:['depth','quality'],
+  note:['note','notes','journal','entry','text','comment']
+};
+
+const $=s=>document.querySelector(s), dlg=$('#dlg');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const r2=v=>Math.round(v*100)/100;
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pd=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const dd=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const dtl=ms=>{const d=new Date(ms);return `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`};
+const dlabel=s=>pd(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const tfmt=ms=>new Date(ms).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+const n1=v=>(+v).toLocaleString('en-US',{maximumFractionDigits:1});
+// signed points, e.g. +1.5
+const sg=(v,plus)=>{const a=Math.abs(v).toFixed(1);return (a==='0.0'?'':v<0?'-':plus?'+':'')+a};
+const hm=m=>{m=Math.round(m);return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`};
+const cls=v=>v>0?'pos':v<0?'neg':'dim';
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+// minutes from "12:30", "1:02:15" or "12.5"; and back to m:ss
+const pm=s=>{s=String(s??'').trim();if(!s)return 0;if(s.includes(':')){const p=s.split(':').map(Number);return (p.length>2?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60)||0}return parseFloat(s)||0};
+const fm=m=>{const t=Math.round(m*60);return `${Math.floor(t/60)}:${pad(t%60)}`};
+
+/* ---------- state ---------- */
+let S=load();
+const U={kind:'all',stat:'all',range:'all',page:0,month:null};
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {log:s.log,notes:s.notes||{}}}catch(e){}
+  return {log:[],notes:{}};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}}
+function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3200)}
+
+// shift = state after - state before. Sessions without both ratings still count for time and streaks.
+function view(useRange=true){
+  const today=ymd(new Date()),wk=s=>{const d=pd(s);d.setDate(d.getDate()-d.getDay());return ymd(d)};
+  const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?wk(d)===wk(today):U.range==='month'?d.slice(0,7)===today.slice(0,7):d===U.range);
+  return S.log.map(e=>({...e,day:ymd(new Date(e.at)),d:e.pre!=null&&e.post!=null?r2(e.post-e.pre):null}))
+    .filter(e=>(U.kind==='all'||e.kind===U.kind)&&(U.stat==='all'||(U.stat==='up'?e.d>0:e.d<0))&&(!useRange||inR(e.day)))
+    .sort((a,b)=>a.at-b.at);
+}
+
+function stats(T,end){
+  const C=T.filter(e=>e.d!=null),n=C.length,W=C.filter(e=>e.d>0),L=C.filter(e=>e.d<0);
+  const gp=r2(W.reduce((s,e)=>s+e.d,0)),gl=r2(-L.reduce((s,e)=>s+e.d,0)),tot=r2(gp-gl);
+  const D={};T.forEach(e=>{D[e.day]??={d:0,n:0,m:0};D[e.day].d+=e.d||0;D[e.day].n++;D[e.day].m+=e.mins});
+  const dk=Object.keys(D).sort(),dp=dk.map(k=>r2(D[k].d)),has=new Set(dk);
+  let eq=0,peak=0,mdd=0,run=0,lw=0,ll=0;const curve=[0],under=[0];
+  C.forEach(e=>{
+    eq+=e.d;peak=Math.max(peak,eq);mdd=Math.max(mdd,peak-eq);curve.push(r2(eq));under.push(r2(eq-peak));
+    const s=Math.sign(e.d);run=!s?0:Math.sign(run)===s?run+s:s;lw=Math.max(lw,run);ll=Math.max(ll,-run);
+  });
+  // day streaks: consecutive calendar days with at least one session; "now" survives until a full day is missed
+  let ds=0,dsMax=0,dsCur=0;dk.forEach((k,i)=>{ds=i&&dd(dk[i-1],k)===1?ds+1:1;dsMax=Math.max(dsMax,ds)});
+  const c=pd(ymd(new Date()));if(!has.has(ymd(c)))c.setDate(c.getDate()-1);
+  while(has.has(ymd(c))){dsCur++;c.setDate(c.getDate()-1)}
+  // consistency: share of days practiced, from the first session in view to today (or the last session)
+  const last=dk[dk.length-1],span=dk.length?dd(dk[0],end&&end>last?end:last)+1:0,cons=span?dk.length/span*100:0;
+  const aw=W.length?gp/W.length:0,al=L.length?gl/L.length:0,pf=gl?gp/gl:gp?Infinity:null,wr=n?W.length/n*100:0;
+  // score axes, each 0-100: consistency, lift rate, shift factor (2.0 = full)
+  const axes=[cons,wr,Math.min((pf||0)/2,1)*100],Q=T.filter(e=>e.depth!=null);
+  return {total:T.length,n,w:W.length,l:L.length,be:n-W.length-L.length,gp,gl,tot,aw,al,pf,wr,exp:n?tot/n:0,
+    best:n?Math.max(...C.map(e=>e.d)):0,worst:n?Math.min(...C.map(e=>e.d)):0,
+    dk,dp,vol:dk.map(k=>D[k].m),dw:dp.filter(x=>x>0).length,dl:dp.filter(x=>x<0).length,
+    avgDay:dp.length?dp.reduce((a,b)=>a+b,0)/dp.length:0,mdd:r2(mdd),lw,ll,run,curve,under,axes,
+    score:Math.round((axes[0]+axes[1]+axes[2])/3),last5:C.slice(-5),dsMax,dsCur,span,cons,
+    mins:T.reduce((s,e)=>s+e.mins,0),depth:Q.length?Q.reduce((s,e)=>s+e.depth,0)/Q.length:null,
+    pre:n?C.reduce((s,e)=>s+e.pre,0)/n:0,post:n?C.reduce((s,e)=>s+e.post,0)/n:0};
+}
+function byKind(T){
+  const G={};
+  T.forEach(e=>{const g=G[e.kind]??={n:0,m:0,c:0,d:0,w:0,q:0,qn:0};g.n++;g.m+=e.mins;
+    if(e.d!=null){g.c++;g.d+=e.d;if(e.d>0)g.w++}if(e.depth!=null){g.q+=e.depth;g.qn++}});
+  return Object.entries(G).map(([k,g])=>({k,...g,avg:g.c?g.d/g.c:null})).sort((a,b)=>(b.avg??-99)-(a.avg??-99));
+}
+
+/* ---------- svg ---------- */
+const ARC='M12 62A50 50 0 0 1 112 62', ND='<div class="nd">NO DATA_</div>';
+function gauge(segs,label){
+  let off=0;
+  const arcs=segs.map(([v,c])=>{const a=`<path class="${c}" d="${ARC}" pathLength="100" stroke-dasharray="${(v*100).toFixed(2)} 100" stroke-dashoffset="${(-off*100).toFixed(2)}"/>`;off+=v;return a}).join('');
+  return `<svg class="gauge" viewBox="0 0 124 70"><path class="s0" d="${ARC}"/>${arcs}<text x="62" y="60" text-anchor="middle">${label}</text></svg>`;
+}
+function line(vals,c){
+  const w=600,h=160,p=6,n=vals.length;if(n<2)return ND;
+  const lo=Math.min(0,...vals),hi=Math.max(0,...vals),rg=hi-lo||1;
+  const x=i=>(p+i*(w-2*p)/(n-1)).toFixed(1),y=v=>(p+(hi-v)*(h-2*p)/rg).toFixed(1);
+  const pts=vals.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  return `<svg class="chart ${c}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polygon class="ar" points="${x(0)},${y(0)} ${pts} ${x(n-1)},${y(0)}"/><line class="z" x1="0" x2="${w}" y1="${y(0)}" y2="${y(0)}"/><polyline class="ln" points="${pts}"/></svg>`;
+}
+function bars(vals,signed){
+  const w=600,h=160,p=6,n=vals.length;if(!n)return ND;
+  const lo=Math.min(0,...vals),hi=Math.max(0,...vals),rg=hi-lo||1,step=(w-2*p)/n,bw=Math.min(180,step*.7);
+  const y=v=>p+(hi-v)*(h-2*p)/rg;
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${vals.map((v,i)=>`<rect class="${signed?(v<0?'fn':'fp'):'fa'}" x="${(p+i*step+(step-bw)/2).toFixed(1)}" y="${Math.min(y(0),y(v)).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,Math.abs(y(v)-y(0))).toFixed(1)}"/>`).join('')}<line class="z" x1="0" x2="${w}" y1="${y(0)}" y2="${y(0)}"/></svg>`;
+}
+function radar(ax){
+  const cx=100,cy=92,R=68,ang=[-90,30,150].map(a=>a*Math.PI/180);
+  const pt=(i,f)=>`${(cx+Math.cos(ang[i])*R*f).toFixed(1)},${(cy+Math.sin(ang[i])*R*f).toFixed(1)}`;
+  const poly=(c,fs)=>`<polygon class="${c}" points="${fs.map((f,i)=>pt(i,f)).join(' ')}"/>`;
+  return `<svg class="radar" viewBox="0 0 200 160">${[.25,.5,.75,1].map(f=>poly('rg',[f,f,f])).join('')}${poly('rv',ax.map(v=>Math.max(v,3)/100))}<text x="100" y="14" text-anchor="middle">CONSISTENCY</text><text x="168" y="144" text-anchor="middle">LIFT %</text><text x="30" y="144" text-anchor="middle">FACTOR</text></svg>`;
+}
+
+/* ---------- render ---------- */
+const lg=(dot,label,a,b='')=>`<div class="lg"><i class="dot ${dot}"></i><span>${label}</span><b>${a}</b><em>${b}</em></div>`;
+const ev=(label,val,v)=>`<div class="ev"><span><i class="dot ${v>0?'bgp':v<0?'bgn':'bgd'}"></i> ${label}</span><b class="${v>0?'pos':v<0?'neg':''}">${val}</b></div>`;
+const kv=(k,v)=>`<div><span class="k">${k}</span><b>${v}</b></div>`;
+
+function calendar(){
+  const D={};view(false).forEach(e=>{D[e.day]??={d:0,n:0,m:0};D[e.day].d+=e.d||0;D[e.day].n++;D[e.day].m+=e.mins});
+  const {y,m}=U.month,lead=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),rows=Math.ceil((lead+dim)/7),today=ymd(new Date());
+  const cell=(p,mm)=>`<b class="${cls(p)}">${sg(p,1)}</b><em>${hm(mm)}</em>`;
+  let h='',tot=0,nT=0,mT=0,wd=0,ld=0,td=0;
+  for(let r=0;r<rows;r++){
+    let ws=0,wm=0,wn=0;
+    for(let c=0;c<7;c++){
+      const d=r*7+c-lead+1;
+      if(d<1||d>dim){h+='<div class="cd off"></div>';continue}
+      const k=`${y}-${pad(m+1)}-${pad(d)}`,x=D[k],p=x?r2(x.d):0;
+      if(x){ws+=p;wm+=x.m;wn++;tot+=p;nT+=x.n;mT+=x.m;td++;if(p>0)wd++;else if(p<0)ld++}
+      h+=`<button class="cd${c%6?'':' we'}${p>0?' p':p<0?' n':x?' z':''}${k===U.range?' sel':''}${k===today?' now':''}" data-a="day" data-v="${k}"><span>${d}${S.notes[k]?' <i class="amb">*</i>':''}</span>${x?cell(p,x.m):''}</button>`;
+    }
+    h+=`<div class="cd wk">${wn?cell(r2(ws),wm):'<em>—</em>'}</div>`;
+  }
+  tot=r2(tot);
+  return `<div class="card">
+  <div class="rowh"><div><p class="h">Practice calendar</p><div class="k">Net shift</div><div class="big ${cls(tot)}">${sg(tot,1)}</div></div>
+   <div>Up: <b class="pos">${wd}</b> &nbsp; Down: <b class="neg">${ld}</b></div></div>
+  <div class="cal">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
+  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
+   <span class="dim">${td} practice day${td===1?'':'s'} · ${nT} session${nT===1?'':'s'} · ${hm(mT)}</span></div></div>`;
+}
+
+function kinds(T){
+  const na='<span class="dim">—</span>',rows=byKind(T).map(g=>`<tr><td><b>${KIND[g.k]}</b></td><td class="r">${g.n}</td><td class="r">${hm(g.m)}</td>
+   <td class="r">${g.avg==null?na:`<b class="${cls(g.avg)}">${sg(g.avg,1)}</b>`}</td><td class="r">${g.c?Math.round(g.w/g.c*100)+'%':na}</td><td class="r">${g.qn?(g.q/g.qn).toFixed(1):na}</td></tr>`).join('');
+  return `<div class="card gap"><p class="h">By practice</p><div class="tw"><table class="sm"><thead><tr><th>Practice</th><th class="r">Sessions</th><th class="r">Time</th><th class="r">Avg shift</th><th class="r">Lift rate</th><th class="r">Avg depth</th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="6" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div></div>`;
+}
+
+function table(T){
+  const rows=[...T].reverse(),pages=Math.max(1,Math.ceil(rows.length/PAGE)),na='<span class="dim">—</span>';
+  U.page=Math.min(Math.max(U.page,0),pages-1);
+  const body=rows.slice(U.page*PAGE,(U.page+1)*PAGE).map(e=>`<tr>
+   <td>${tfmt(e.at)}</td><td><b>${KIND[e.kind]}</b></td><td class="dim">${esc(e.tech)||'—'}</td>
+   <td class="r">${n1(e.mins)}</td><td class="r">${e.pre??na}</td><td class="r">${e.post??na}</td><td class="r">${e.depth??na}</td>
+   <td class="r">${e.d==null?na:`<b class="${cls(e.d)}">${sg(e.d,1)}</b>`}</td>
+   <td class="dim" title="${esc(e.note)}">${esc(e.note.length>44?e.note.slice(0,43)+'…':e.note)}</td>
+   <td class="r"><button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete session">X</button></td></tr>`).join('');
+  return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
+  <div class="tw"><table><thead><tr><th>Time (local)</th><th>Practice</th><th>Technique</th><th class="r">Min</th><th class="r">Before</th><th class="r">After</th><th class="r">Depth</th><th class="r">Shift</th><th>Note</th><th></th></tr></thead>
+  <tbody>${body||'<tr><td colspan="10" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div>
+  <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
+}
+
+function render(){
+  const today=ymd(new Date()),T=view(),s=stats(T,U.range in RANGES?today:U.range),n=s.n,nd=s.dk.length,bd=nd-s.dw-s.dl;
+  const pct=(a,b)=>b?Math.round(a/b*100)+'%':'0%';
+  const pfT=s.pf==null?'—':s.pf===Infinity?'&infin;':s.pf.toFixed(2),gs=s.gp+s.gl,mx=Math.max(s.aw,s.al)||1;
+  $('[data-f=kind]').innerHTML='<option value="all">All practices</option>'+Object.entries(KIND).map(([k,v])=>`<option value="${k}"${k===U.kind?' selected':''}>${v}</option>`).join('');
+  $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
+  $('#scope').textContent=`Statistics for ${U.kind==='all'?'All Practices':KIND[U.kind]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
+
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Log a session, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="add">+ SESSION</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+<section class="g g4">
+ <div class="card"><p class="h">Uplift</p><div class="k">Rated sessions</div><div class="big">${n}</div>
+  ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
+  ${lg('bgp','Lift',s.w,pct(s.w,n))}${lg('bgd','Flat',s.be,pct(s.be,n))}${lg('bgn','Drop',s.l,pct(s.l,n))}</div>
+ <div class="card"><p class="h">Day wins</p><div class="k">Practice days</div><div class="big">${nd}</div>
+  ${gauge([[nd?s.dw/nd:0,'sg'],[nd?bd/nd:0,'sd'],[nd?s.dl/nd:0,'sr']],nd?pct(s.dw,nd):'—')}
+  ${lg('bgp','Up days',s.dw,pct(s.dw,nd))}${lg('bgd','Flat days',bd,pct(bd,nd))}${lg('bgn','Down days',s.dl,pct(s.dl,nd))}</div>
+ <div class="card"><p class="h">Shift factor</p><div class="k">Factor</div><div class="big">${pfT}</div>
+  ${gauge([[gs?s.gp/gs:0,'sg'],[gs?s.gl/gs:0,'sr']],pfT)}
+  ${lg('bgp','Lift',sg(s.gp,1))}${lg('bgn','Drop',sg(-s.gl))}${lg('bgd','Net',`<span class="${cls(s.tot)}">${sg(s.tot,1)}</span>`)}</div>
+ <div class="card"><p class="h">Avg lift/drop</p><div class="k">Average</div><div class="big ${cls(s.aw-s.al)}">${sg(s.aw-s.al,1)}</div>
+  <div class="ev"><span>Lift</span><b class="pos">${sg(s.aw,1)}</b></div><div class="hb"><i class="bgp" style="width:${(s.aw/mx*100).toFixed(1)}%"></i></div>
+  <div class="ev"><span>Drop</span><b class="neg">${sg(-s.al)}</b></div><div class="hb"><i class="bgn" style="width:${(s.al/mx*100).toFixed(1)}%"></i></div>
+  <div class="ev rule"><span class="dim">Expectancy / session</span><b class="${cls(s.exp)}">${sg(s.exp,1)}</b></div></div>
+</section>
+<section class="g g21">
+ ${calendar()}
+ <div class="card"><p class="h">Evaluation</p>
+  <div class="sec first">Performance</div>
+  ${ev('Expectancy',sg(s.exp,1),s.exp)}${ev('Average per practice day',sg(s.avgDay,1),s.avgDay)}${ev('Biggest lift',sg(Math.max(s.best,0),1),Math.max(s.best,0))}${ev('Biggest drop',sg(Math.min(s.worst,0)),Math.min(s.worst,0))}${ev('Avg before → after',n?`${s.pre.toFixed(1)} → ${s.post.toFixed(1)}`:'—',s.post-s.pre)}
+  <div class="sec">Practice</div>
+  ${ev('Total time',hm(s.mins))}${ev('Sessions',s.total)}${ev('Average session',s.total?n1(s.mins/s.total)+' min':'—')}${ev('Average depth',s.depth==null?'—':s.depth.toFixed(1))}
+  <div class="sec">Consistency</div>
+  ${ev('Up days / down days',`${s.dw} / ${s.dl}`,s.dw-s.dl)}${ev('Days practiced',nd?`${nd} of ${s.span} · ${Math.round(s.cons)}%`:'—')}${ev('Day streak (now / best)',`${s.dsCur} / ${s.dsMax}`,s.dsCur)}${ev('Session run (W / L)',`${s.lw}W / ${s.ll}L`)}${ev('Last 5 rated',s.last5.map(e=>`<i class="dot ${e.d>0?'bgp':e.d<0?'bgn':'bgd'}"></i>`).join(' ')||'—')}
+ </div>
+</section>
+<section class="g g21">
+ <div class="card"><div class="rowh"><div><p class="h">Shift curve</p><div class="big ${cls(s.tot)}">${sg(s.tot,1)}</div></div>
+  <div class="eqs">${kv('Lift rate',n?s.wr.toFixed(1)+'%':'—')}${kv('Factor',pfT)}${kv('Rated',n)}${kv('Best',`<span class="${cls(s.best)}">${sg(s.best,1)}</span>`)}${kv('Worst',`<span class="${cls(s.worst)}">${sg(s.worst,1)}</span>`)}</div></div>
+  ${line(s.curve,s.tot<0?'cr':'cg')}</div>
+ <div class="card"><p class="h">Performance</p><div class="k">Daily shift</div><div class="big ${cls(s.tot)}">${sg(s.tot,1)}</div>${bars(s.dp,1)}</div>
+</section>
+<section class="g g3">
+ <div class="card"><p class="h">Score</p><div class="k">Composite 0–100</div><div class="big amb">${s.total?s.score:'—'}</div>${radar(s.axes)}</div>
+ <div class="card"><p class="h">Volume</p><div class="k">Minutes / day</div><div class="big">${hm(s.mins)}</div>${bars(s.vol)}</div>
+ <div class="card"><p class="h">Drawdown</p><div class="k">Max drawdown</div><div class="big ${cls(-s.mdd)}">${sg(-s.mdd)}</div>${line(s.under,'cr')}</div>
+</section>
+${kinds(T)}
+${table(T)}
+<footer><p>State is your own 1–10 rating: 1 = scattered or tense, 10 = calm and clear. Shift = state after − state before. Depth = how settled the session itself was.</p>
+ Data lives on this device only <button data-a="bak">BACKUP JSON</button><button data-a="clear">CLEAR ALL</button></footer>`;
+}
+
+/* ---------- dialogs ---------- */
+function entryForm(t){
+  const d=t||{kind:U.kind!=='all'?U.kind:'M',tech:'',at:Date.now(),mins:'',pre:null,post:null,depth:null,note:''};
+  const rate=(name,label,v)=>`<label>${label} (1–10)<input name="${name}" type="number" min="1" max="10" step="0.5" value="${v??''}"></label>`;
+  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT':'NEW'} SESSION</h3>
+  <div class="fgrid">
+   <label>Practice<select name="kind">${Object.entries(KIND).map(([k,v])=>`<option value="${k}"${k===d.kind?' selected':''}>${v}</option>`).join('')}</select></label>
+   <label>Technique<input name="tech" list="tch" autocomplete="off" value="${esc(d.tech)}"></label>
+   <label>When<input name="when" type="datetime-local" required value="${dtl(d.at).slice(0,16)}"></label>
+   <label>Minutes<input name="mins" type="number" min="0" step="any" required value="${d.mins}"></label>
+   ${rate('pre','State before',d.pre)}${rate('post','State after',d.post)}
+   ${rate('depth','Depth',d.depth)}<button type="button" id="tm">START TIMER</button>
+  </div>
+  <label>Note / journal<textarea name="note" rows="6">${esc(d.note||'')}</textarea></label>
+  <datalist id="tch"></datalist>
+  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  const f=$('#tf'),e=f.elements,tb=$('#tm'),nv=x=>x.value===''?null:+x.value;
+  const read=()=>({kind:e.kind.value,tech:e.tech.value.trim(),at:new Date(e.when.value).getTime(),mins:+e.mins.value||0,pre:nv(e.pre),post:nv(e.post),depth:nv(e.depth),note:e.note.value.trim()});
+  const sync=()=>{
+    const k=e.kind.value,used=S.log.filter(x=>x.kind===k&&x.tech).map(x=>x.tech);
+    $('#tch').innerHTML=[...new Set([...used,...TECH[k]])].map(a=>`<option value="${esc(a)}">`).join('');
+    const v=read();$('#pv').innerHTML=v.pre!=null&&v.post!=null?`SHIFT <b class="${cls(v.post-v.pre)}">${sg(v.post-v.pre,1)}</b>`:'';
+  };
+  // timer: rate "before", start, practise, stop, rate "after". Runs off the clock, so a sleeping screen doesn't lose time.
+  let t0=0,iv=0;
+  tb.onclick=()=>{
+    if(iv){clearInterval(iv);iv=0;tb.textContent='START TIMER';return}
+    t0=Date.now()-(+e.mins.value||0)*60000;
+    iv=setInterval(()=>{const m=(Date.now()-t0)/60000;e.mins.value=+m.toFixed(1);tb.textContent='STOP '+fm(m)},500);
+    tb.textContent='STOP '+fm((Date.now()-t0)/60000);
+  };
+  dlg.addEventListener('close',()=>clearInterval(iv),{once:true});
+  f.addEventListener('input',sync);sync();
+  f.addEventListener('submit',ev=>{
+    ev.preventDefault();const v=read();
+    if(!isFinite(v.at)||!(v.mins>0)){$('#pv').innerHTML='<b class="neg">Minutes must be above zero</b>';return}
+    if(t)Object.assign(S.log.find(x=>x.id===t.id),v);else S.log.push({id:uid(),...v});
+    save();dlg.close();setMonth(v.at);render();
+  });
+  dlg.showModal();
+}
+function noteForm(day){
+  dlg.innerHTML=`<form id="nf"><h3>NOTES // ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Intention. What came up. What to carry into tomorrow.">${esc(S.notes[day]||'')}</textarea>
+  <div class="fa2"><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  $('#nf').addEventListener('submit',ev=>{ev.preventDefault();const v=ev.target.elements.n.value.trim();if(v)S.notes[day]=v;else delete S.notes[day];save();dlg.close();render()});
+  dlg.showModal();
+}
+
+/* ---------- import / export ---------- */
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function parseCSV(txt){
+  const rows=[];let row=[],f='',q=false;
+  const end=()=>{row.push(f);f='';if(row.some(x=>x.trim()!==''))rows.push(row);row=[]};
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(f);f=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;end()}else f+=c}
+  end();return rows;
+}
+// date-only values are read as local noon so they never slip to the previous day
+const ts=s=>Date.parse(/^\d{4}-\d\d-\d\d$/.test(s)?s+'T12:00':/^\d{4}-\d\d-\d\d \d/.test(s)?s.replace(' ','T'):s);
+const kindOf=s=>{s=s.toLowerCase();const K=Object.keys(KIND);return K.find(k=>KIND[k].toLowerCase()===s)||K.find(k=>s.length>3&&KIND[k].toLowerCase().startsWith(s.slice(0,4)))||'M'};
+function importCSV(txt){
+  const rows=parseCSV(txt.replace(/^\uFEFF/,''));if(rows.length<2)return toast('No rows found');
+  const H=rows[0].map(h=>h.trim().toLowerCase()),c={};
+  for(const k in ALIAS)c[k]=H.findIndex(h=>ALIAS[k].includes(h));
+  if(c.at<0)return toast('Missing column: date');
+  const key=t=>[t.at,t.kind,r2(t.mins),t.pre,t.post].join('|'),seen=new Set(S.log.map(key));
+  let add=0,skip=0,last=0;
+  rows.slice(1).forEach(r=>{
+    const g=k=>c[k]<0?'':(r[c[k]]||'').trim(),rt=k=>{const v=parseFloat(g(k));return isFinite(v)?v:null};
+    const t={id:uid(),at:ts(g('at')),kind:kindOf(g('kind')),tech:g('tech'),mins:pm(g('mins')),pre:rt('pre'),post:rt('post'),depth:rt('depth'),note:g('note')};
+    if(!isFinite(t.at)||!(t.mins>0)||seen.has(key(t))){skip++;return}
+    seen.add(key(t));S.log.push(t);add++;last=Math.max(last,t.at);
+  });
+  if(add){save();setMonth(last);render()}
+  toast(`Imported ${add} · skipped ${skip}`);
+}
+function exportCSV(){
+  const T=view();if(!T.length)return toast('Nothing to export');
+  const q=v=>{v=String(v??'');return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v};
+  const rows=[['date','practice','technique','minutes','before','after','shift','depth','note'],
+    ...T.map(e=>[dtl(e.at),KIND[e.kind],e.tech,e.mins,e.pre??'',e.post??'',e.d??'',e.depth??'',e.note||''])];
+  dl(`mind-${ymd(new Date())}.csv`,rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
+}
+function sample(){
+  // three weeks of practice: days ago, hour, minute, practice, technique, minutes, before, after, depth, note
+  const n=new Date(),_=null;
+  [[22,6,10,'B','Box 4-4-4-4',8,5,6.5,6,''],[22,21,30,'J','Evening review',10,5,6,_,'Rushed the morning. Slower start tomorrow.'],
+   [21,6,15,'M','Breath counting',10,5,6,5,''],[20,6,10,'S','NSDR',15,4,6.5,7,'Slept badly; this reset it.'],
+   [19,6,20,'B','Box 4-4-4-4',8,6,6.5,6,''],[19,8,50,'V','Session rehearsal',6,6,7,7,''],
+   [18,6,10,'M','Breath counting',12,5,4.5,3,'Restless. Kept planning the day.'],
+   [16,7,0,'F','Single-point',10,5,6,6,''],[15,6,10,'B','Resonance 5.5',10,4.5,7,7,''],
+   [15,21,40,'J','Evening review',12,_,_,_,'Wrote without rating. Three things that went right.'],
+   [14,6,10,'M','Open awareness',15,6,7,7,''],[13,6,15,'S','Progressive relaxation',20,5,7.5,8,''],
+   [12,6,10,'V','Session rehearsal',8,6,6,5,'Flat. Mind kept wandering off the script.'],[12,21,20,'J','Evening review',10,4,5.5,_,''],
+   [11,6,10,'B','Box 4-4-4-4',8,5.5,7,7,''],[9,6,30,'M','Breath counting',15,5,6.5,6,''],
+   [8,6,10,'F','Single-point',12,6,5.5,4,'Forced it. Shorter next time.'],[8,12,30,'B','Physiological sigh',3,3.5,6,6,'Midday reset.'],
+   [7,6,10,'S','NSDR',20,5,7.5,8,''],[6,6,10,'M','Open awareness',20,6,7.5,8,''],
+   [5,6,15,'V','Session rehearsal',8,6.5,7.5,7,''],[5,21,30,'J','Evening review',15,5,6.5,_,''],
+   [4,6,10,'B','Resonance 5.5',12,5,7.5,8,''],[3,6,10,'M','Breath counting',20,6,6,5,''],
+   [2,6,10,'S','NSDR',15,4.5,7,7,''],[1,6,10,'F','Single-point',15,6,7,7,''],[1,8,45,'V','Session rehearsal',6,7,7.5,7,'']]
+  .forEach(([ago,h,mi,kind,tech,mins,pre,post,depth,note])=>
+    S.log.push({id:uid(),at:new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago,h,mi).getTime(),kind,tech,mins,pre,post,depth,note}));
+  save();boot();
+}
+
+/* ---------- events ---------- */
+const ACT={
+  add:()=>entryForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
+  note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
+  bak:()=>dl(`mind-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
+  clear:()=>{if(confirm('Delete ALL sessions and notes on this device?')){S={log:[],notes:{}};save();U.range='all';boot()}},
+  prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
+  day:v=>{U.range=U.range===v?'all':v;U.page=0;render()},
+  edit:v=>entryForm(S.log.find(t=>t.id===v)),
+  del:v=>{if(confirm('Delete this session?')){S.log=S.log.filter(t=>t.id!==v);save();render()}},
+  pp:()=>{U.page--;render()},pn:()=>{U.page++;render()}
+};
+function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFullYear(),m:d.getMonth()};render()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a])ACT[b.dataset.a](b.dataset.v)});
+document.addEventListener('change',e=>{const k=e.target.dataset.f;if(!k)return;U[k]=e.target.value;U.page=0;render()});
+$('#file').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const txt=await f.text();
+  if(!/\.json$/i.test(f.name))return importCSV(txt);
+  try{
+    const s=JSON.parse(txt);if(!Array.isArray(s.log))throw 0;
+    if(!confirm(`Replace everything here with this backup (${s.log.length} sessions)?`))return;
+    S={log:s.log,notes:s.notes||{}};save();boot();toast('Backup restored');
+  }catch(x){toast('Not a valid backup file')}
+});
+
+function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
+boot();
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
