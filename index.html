@@ -134,6 +134,15 @@ textarea{resize:vertical}
 .clock{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;letter-spacing:.04em}
 .held .ball{opacity:.45}.held .cue,.clock.held{color:var(--dim)}
 .c{text-align:center}
+.cue small{font-size:10px;color:var(--dim);letter-spacing:.2em}
+.gp{text-align:center;min-height:3em;margin:4px 0 10px;font-size:14px;line-height:1.5;color:var(--tx)}
+.rv textarea{width:100%;margin-bottom:10px;font-size:14px}
+.ball.flame{inset:70px 92px 40px;border-radius:50% 50% 45% 45%/62% 62% 38% 38%;border:0;background:radial-gradient(ellipse at 50% 70%,#fff3c4 0,#ffb000 38%,rgba(255,90,0,.35) 70%,transparent 72%);box-shadow:0 0 60px rgba(255,150,0,.35);animation:fl 2.6s ease-in-out infinite}
+@keyframes fl{0%,100%{filter:brightness(1)}40%{filter:brightness(1.18)}55%{filter:brightness(.9)}}
+.ball.pin{inset:108px;border:0;background:var(--amber);box-shadow:0 0 24px rgba(255,176,0,.5)}
+label.ck{flex-direction:row;align-items:center;gap:8px;margin:2px 0 8px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--tx)}
+label.ck input{width:auto}
+[hidden]{display:none!important}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 #toast.on{opacity:1}
 
@@ -454,12 +463,48 @@ function techs(k){
 }
 
 /* ---------- guided session ----------
-   START: pick practice + length, optionally rate "before". The timer runs off the clock and is kept in
-   localStorage, so a sleeping screen or a reload doesn't lose it. At the end it chimes and asks for "after". */
+   Each practice gets its own screen:
+     Breathwork             bubble paced by the technique
+     Meditation / Focus     optional 1-min settle-in on the bubble, then a quiet glowing orb (flame / dot for focus)
+     Body scan / Visual.    prompts spaced through the session, soft bell on each, optionally read aloud
+     Journaling             prompts and a writing pad; what you write becomes the note
+   Bells: three strikes to open and close, optional interval bell. The run lives in localStorage, so a
+   sleeping screen or a reload doesn't lose it. */
+const TIP={
+  M:'Rest attention on the breath. When the mind wanders, gently come back.',
+  F:'Choose one point of attention. When it slips, return to it.',
+  'Breath counting':'Count each exhale, one to ten. Lost count? Begin again at one.',
+  'Open awareness':'Let sounds, sensations and thoughts come and go. Rest as the space they appear in.',
+  'Noting':'Softly name what pulls you — thinking, hearing, feeling — then return.',
+  'Single-point':'Rest your gaze on the dot. When it drifts, bring it back.',
+  'Counting':'Count slowly to ten and back down. Start over when you lose the thread.',
+  'Candle':'Watch the flame. When the mind wanders, return to the light.'
+};
+const SCAN=['Crown of the head and scalp','Forehead, eyes and jaw','Neck and shoulders','Arms, hands and fingers','Chest and upper back',
+  'Belly and lower back','Hips and pelvis','Thighs and knees','Calves and shins','Ankles and feet','The whole body, breathing as one'];
+const STEPS={
+  S:['Settle in. Feel the weight of the body supported.',...SCAN],
+  'NSDR':['Lie still. Let the body grow heavy.',...SCAN.map(x=>x+'. Let it grow heavy and warm.')],
+  'Progressive relaxation':['Settle in. Breathe slowly.',...SCAN.slice(0,-1).map(x=>`${x}. Tense for five seconds… then release.`),'The whole body, soft and loose.'],
+  V:['Settle and breathe.','Picture the scene clearly. The light, the sounds, the temperature.','See yourself in it, calm and ready.','Move through it step by step.','Notice how it feels in the body.','Let the picture fade. Come back to the breath.'],
+  'Session rehearsal':['Settle and breathe.','Picture where you will be. The light, the sounds.','See yourself arrive, calm and ready.','Walk through the opening moves.','Something goes wrong. Watch yourself respond, steady.','See it finish well. Notice how that feels.','Bring that feeling back to the breath.'],
+  'Process':['Choose one task ahead of you.','See the first step in detail.','Move through each step, unhurried.','Feel your hands and body doing the work.','Finish the last step.','Rest in having done it.'],
+  'Outcome':['Picture the result you want.','Make it vivid: where, who, what it looks like.','Feel it as if it has already happened.','Notice what you did to get there.','Hold the picture. Breathe it in.','Let it go and return to the room.'],
+  J:['Write whatever is on your mind.'],
+  'Evening review':['What went well today?','What drained you?','What will you do differently tomorrow?'],
+  'Morning pages':['Write whatever is on your mind. Don\'t stop, don\'t edit.'],
+  'Gratitude':['Three things you are grateful for, and why.'],
+  'Free write':['Write freely.']
+};
+const mode=k=>k==='B'?'breath':k==='S'||k==='V'?'guide':k==='J'?'write':'sit';
+const steps=()=>STEPS[R.tech]||STEPS[R.kind]||[];
 let R=null,RI=0,RA=0,WL=null,AC=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
+// a run saved by the earlier timer lacks the newer fields
+if(R)R={pi:-1,lb:0,st:false,note:'',bells:0,intent:'',...R};
 const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
 const elapsed=()=>(R.paused??Date.now())-R.t0;
+const pref=()=>{try{return JSON.parse(localStorage.getItem(RUN+'.pref'))||{}}catch(e){return {}}};
 const rpick=(n,label,v)=>`<span class="k">${label}</span><div class="rate" data-n="${n}">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button type="button" data-r="${i}"${v===i?' class="on"':''}>${i}</button>`).join('')}</div>`;
 const rval=n=>{const b=dlg.querySelector(`.rate[data-n="${n}"] .on`);return b?+b.dataset.r:null};
 dlg.addEventListener('click',e=>{
@@ -469,13 +514,19 @@ dlg.addEventListener('click',e=>{
 });
 // Esc must not drop a session in progress
 dlg.addEventListener('cancel',e=>{if(R)e.preventDefault()});
-function chime(){
+// singing-bowl strike: a low fundamental with inharmonic partials and a long tail; n strikes a few seconds apart
+function bell(n=1,soft){
   try{
-    AC??=new (window.AudioContext||window.webkitAudioContext)();AC.resume();const t=AC.currentTime;
-    [[528,.16],[792,.06]].forEach(([f,v])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(1e-4,t+4);
-      o.connect(g).connect(AC.destination);o.start(t);o.stop(t+4)});
+    AC??=new (window.AudioContext||window.webkitAudioContext)();AC.resume();
+    for(let i=0;i<n;i++){const t=AC.currentTime+i*2.6,v=soft?.06:.14;
+      [[220,1],[220*2.76,.45],[220*5.4,.18]].forEach(([f,a])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;
+        g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*a,t+.015);g.gain.exponentialRampToValueAtTime(1e-4,t+(soft?3:6));
+        o.connect(g).connect(AC.destination);o.start(t);o.stop(t+6)})}
   }catch(e){}
+}
+function say(t){
+  if(!R?.voice||!window.speechSynthesis)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=.82;u.pitch=.9;speechSynthesis.speak(u)}catch(e){}
 }
 async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('screen');WL?.addEventListener('release',()=>WL=null)}else if(!on&&WL){WL.release();WL=null}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R&&R.done==null)wake(true)});
@@ -489,50 +540,89 @@ function breath(ms){
   }
   return {c:'',left:0,s};
 }
-function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}wake(false)}
+const settling=()=>R.settle&&elapsed()<60000;
+function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}try{speechSynthesis.cancel()}catch(e){}wake(false)}
 
 function startForm(){
-  const last=S.log.reduce((a,b)=>!a||b.at>a.at?b:a,null),kind=U.kind!=='all'?U.kind:last?.kind||'M';
-  const tech=last&&last.kind===kind?last.tech:'',mins=last?Math.round(last.mins)||10:10;
+  const last=S.log.reduce((a,b)=>!a||b.at>a.at?b:a,null),P=pref();
+  let kind=U.kind!=='all'?U.kind:last?.kind||'M';
+  const lastTech=k=>S.log.filter(x=>x.kind===k&&x.tech).sort((a,b)=>b.at-a.at)[0]?.tech||TECH[k][0];
   dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
-  <div class="fgrid">
-   <label>Practice<select name="kind">${Object.entries(KIND).map(([k,v])=>`<option value="${k}"${k===kind?' selected':''}>${v}</option>`).join('')}</select></label>
-   <label>Technique<input name="tech" list="tch" autocomplete="off" value="${esc(tech)}"></label>
-  </div>
+  <div class="chips" id="kd">${Object.entries(KIND).map(([k,v])=>`<button type="button" data-k="${k}">${v}</button>`).join('')}</div>
+  <span class="k">Technique</span><div class="chips" id="td"></div>
   <span class="k">Minutes</span>
-  <div class="chips">${[5,10,15,20,30].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${mins}"></div>
+  <div class="chips">${[5,10,15,20,30,45].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${P.mins??10}"></div>
+  <div class="fgrid">
+   <label>Interval bell<select name="bells">${[[0,'Off'],[1,'Every minute'],[2,'Every 2 min'],[5,'Every 5 min'],[10,'Every 10 min']].map(([v,l])=>`<option value="${v}"${v===(P.bells??0)?' selected':''}>${l}</option>`).join('')}</select></label>
+   <label>Intention (optional)<input name="intent" autocomplete="off" placeholder="Patience. Stay with the breath."></label>
+  </div>
+  <label class="ck" id="o-settle"><input type="checkbox" name="settle"${P.settle??true?' checked':''}> Settle in with a minute of slow breathing</label>
+  <label class="ck" id="o-voice"><input type="checkbox" name="voice"${P.voice??true?' checked':''}> Read the prompts aloud</label>
   ${rpick('pre','State before (optional)')}
-  <datalist id="tch"></datalist>
-  <div class="fa2"><span class="dim">Breathe with the bubble</span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
-  const f=$('#sf'),e=f.elements;
-  const mark=()=>{f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));techs(e.kind.value)};
-  f.addEventListener('click',ev=>{const b=ev.target.closest('[data-m]');if(b){e.mins.value=b.dataset.m;mark()}});
-  f.addEventListener('input',mark);mark();
+  <div class="fa2"><span class="dim" id="md"></span><button type="button" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  const f=$('#sf'),e=f.elements;let tech=lastTech(kind);
+  const DESC={breath:'Breathe with the bubble',sit:'Quiet screen, soft light',guide:'Prompts with a soft bell',write:'Prompts and a writing pad'};
+  const paint=()=>{
+    f.querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on',b.dataset.k===kind));
+    $('#td').innerHTML=TECH[kind].map(t=>`<button type="button" data-t="${esc(t)}"${t===tech?' class="on"':''}>${esc(t)}</button>`).join('');
+    f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));
+    const m=mode(kind);$('#o-settle').hidden=m!=='sit';$('#o-voice').hidden=m!=='guide';$('#md').textContent=DESC[m];
+  };
+  f.addEventListener('click',ev=>{
+    const k=ev.target.closest('[data-k]'),t=ev.target.closest('[data-t]'),m=ev.target.closest('[data-m]');
+    if(k){kind=k.dataset.k;tech=lastTech(kind)}if(t)tech=t.dataset.t;if(m)e.mins.value=m.dataset.m;
+    if(k||t||m)paint();
+  });
+  f.addEventListener('input',paint);paint();
   f.addEventListener('submit',ev=>{
-    ev.preventDefault();const now=Date.now();
-    R={kind:e.kind.value,tech:e.tech.value.trim(),target:Math.max(0,+e.mins.value||0),pre:rval('pre'),start:now,t0:now,paused:null,done:null};
-    chime();keepRun();runView();
+    ev.preventDefault();const now=Date.now(),m=mode(kind);
+    const p={mins:e.mins.value===''?'':+e.mins.value,bells:+e.bells.value,settle:e.settle.checked,voice:e.voice.checked};
+    try{localStorage.setItem(RUN+'.pref',JSON.stringify(p))}catch(x){}
+    R={kind,tech,target:Math.max(0,+e.mins.value||0),pre:rval('pre'),intent:e.intent.value.trim(),bells:p.bells,
+      settle:m==='sit'&&p.settle,voice:m==='guide'&&p.voice,start:now,t0:now,paused:null,done:null,pi:-1,lb:0,st:false,
+      note:m==='write'?(STEPS[tech]||STEPS[kind]).join('\n\n\n')+'\n\n':''};
+    bell(3);if(R.voice)say(' ');keepRun();runView();
   });
   dlg.showModal();
 }
 function runView(){
-  dlg.innerHTML=`<div><h3>${KIND[R.kind].toUpperCase()}${R.tech?' // '+esc(R.tech).toUpperCase():''}</h3>
-  <div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
-   <div class="ball" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
+  const m=mode(R.kind),S1=steps(),vis=R.tech==='Candle'?' flame':R.tech==='Single-point'?' pin':'';
+  dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind].toUpperCase()} // ${esc(R.tech).toUpperCase()}</h3>
+  ${R.intent?`<p class="dim c">“${esc(R.intent)}”</p>`:''}
+  ${m==='write'?`<p class="gp" id="gp">${esc(S1[0]||'')}</p><textarea id="jn" rows="12" placeholder="Write.">${esc(R.note)}</textarea>`
+  :`<div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
+   <div class="ball${m==='breath'?'':vis}" id="ball"></div><div class="cue" id="pc" aria-live="polite"></div></div>
+  <p class="gp" id="gp"></p>`}
   <div class="clock" id="clk"></div>
-  <p class="dim c">${R.target?`${fm(R.target)} session · ends with a chime`:'Open session · finish when ready'}</p>
+  <p class="dim c">${R.target?`${fm(R.target)} · closes with the bell`:'Open session · finish when ready'}${R.bells?` · bell every ${R.bells} min`:''}</p>
   <div class="fa2"><button type="button" id="rd">DISCARD</button><button type="button" id="rp">${R.paused?'RESUME':'PAUSE'}</button><button type="button" class="pri" id="rf">FINISH</button></div></div>`;
+  // prompts are spread evenly over a timed session; an open session moves on every 90 s
+  const stepLen=()=>R.target&&S1.length?R.target*60000/S1.length:90000;
   const tick=()=>{
-    const el=elapsed()/60000;if(R.target&&el>=R.target)return endRun(true);
-    $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);$('#bub').classList.toggle('held',!!R.paused);
-    if(R.target)$('#pg').setAttribute('stroke-dasharray',`${(el/R.target*100).toFixed(2)} 100`);
-    const b=breath(elapsed());$('#pc').innerHTML=R.paused?'PAUSED':`${b.c}<em>${b.left}</em>`;
+    const ms=elapsed(),el=ms/60000;if(R.target&&el>=R.target)return endRun(true);
+    $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);
+    $('#bub')?.classList.toggle('held',!!R.paused);
+    if(R.target&&$('#pg'))$('#pg').setAttribute('stroke-dasharray',`${(el/R.target*100).toFixed(2)} 100`);
+    if(R.paused){if($('#pc'))$('#pc').innerHTML='PAUSED';return}
+    // interval bell (not on top of the closing bell)
+    if(R.bells){const k=Math.floor(el/R.bells);if(k>R.lb){R.lb=k;if(!R.target||R.target-el>.5)bell(1,1);keepRun()}}
+    if(m==='breath'||settling()){const b=breath(ms);$('#pc').innerHTML=`${settling()?'<small>SETTLE IN</small>':''}${b.c}<em>${b.left}</em>`;$('#gp').textContent='';return}
+    if(R.settle&&!R.st){R.st=true;bell(1,1);keepRun()}
+    if(m==='sit'){$('#pc').innerHTML='';$('#gp').textContent=TIP[R.tech]||TIP[R.kind];return}
+    const i=Math.min(Math.floor(ms/stepLen()),S1.length-1);
+    if(i!==R.pi){if(R.pi>=0||m==='guide')bell(1,1);R.pi=i;keepRun();if(m==='guide')say(S1[i])}
+    if(m==='guide'){$('#pc').innerHTML=`<small>${i+1} / ${S1.length}</small>`;$('#gp').textContent=S1[i]}
   };
-  // the bubble moves every frame; the clock and cue only need a few updates a second
-  const anim=()=>{const el=$('#ball');if(!R||R.done!=null||!el)return;el.style.transform=`scale(${breath(elapsed()).s.toFixed(3)})`;RA=requestAnimationFrame(anim)};
+  // the bubble breathes with a pattern; the quiet orb drifts on a slow 12 s swell
+  const anim=()=>{
+    const b=$('#ball');if(!R||R.done!=null||!b)return;
+    const s=m==='breath'||settling()?breath(elapsed()).s:.72+.1*Math.sin(elapsed()/12000*2*Math.PI);
+    b.style.transform=`scale(${s.toFixed(3)})`;RA=requestAnimationFrame(anim);
+  };
   cancelAnimationFrame(RA);RA=requestAnimationFrame(anim);
+  if(m==='write')$('#jn').oninput=e=>{R.note=e.target.value;keepRun()};
   $('#rp').onclick=()=>{
-    if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else R.paused=Date.now();
+    if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else{R.paused=Date.now();try{speechSynthesis.cancel()}catch(e){}}
     $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
   };
   $('#rf').onclick=()=>endRun(false);
@@ -542,15 +632,22 @@ function runView(){
   wake(true);
 }
 function endRun(auto){
-  clearInterval(RI);cancelAnimationFrame(RA);RI=0;
+  clearInterval(RI);cancelAnimationFrame(RA);RI=0;try{speechSynthesis.cancel()}catch(e){}
   R.done=auto?R.target:Math.max(.1,Math.round(elapsed()/6000)/10);
-  if(auto){chime();navigator.vibrate?.([200,120,200])}
+  if(auto){bell(3);navigator.vibrate?.([200,120,200])}
   keepRun();wake(false);wrapForm();
 }
+// the writing pad as a note: prompts you left unanswered are dropped (and a lone prompt isn't repeated)
+function journal(){
+  const S1=steps(),out=[];let cur=null;
+  R.note.split('\n').forEach(l=>{if(S1.includes(l.trim()))out.push(cur={h:l.trim(),b:[]});else if(cur)cur.b.push(l);else out.push(cur={h:null,b:[l]})});
+  return out.filter(o=>o.b.join('').trim()).map(o=>(o.h&&S1.length>1?o.h+'\n':'')+o.b.join('\n').trim()).join('\n\n');
+}
 function wrapForm(){
+  const note=[R.intent&&`Intention: ${R.intent}`,journal()].filter(Boolean).join('\n\n');
   dlg.innerHTML=`<form id="wf"><h3>SESSION DONE // ${fm(R.done)} ${KIND[R.kind].toUpperCase()}</h3>
   ${rpick('pre','State before',R.pre)}${rpick('post','State after')}${rpick('depth','Depth')}
-  <label>Note / journal<textarea name="note" rows="4" placeholder="What came up."></textarea></label>
+  <label>Note / journal<textarea name="note" rows="${R.kind==='J'?8:4}" placeholder="What came up.">${esc(note)}</textarea></label>
   <div class="fa2"><span id="pv"></span><button type="button" id="wd">DISCARD</button><button class="pri">SAVE</button></div></form>`;
   const f=$('#wf');
   const sync=()=>{const a=rval('pre'),b=rval('post');$('#pv').innerHTML=a!=null&&b!=null?`SHIFT <b class="${cls(b-a)}">${sg(b-a,1)}</b>`:''};
