@@ -1,0 +1,14 @@
+{
+  "name": "ISIONXXX // MIND",
+  "short_name": "MIND",
+  "description": "Meditation, breathwork and journaling log",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070707",
+  "theme_color": "#070707",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
