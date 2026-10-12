@@ -91,6 +91,9 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .chart *{vector-effect:non-scaling-stroke}
 .chart .ln{fill:none;stroke-width:1.5}
 .chart .z{stroke:var(--line2);stroke-dasharray:4 4}
+.chart .mb{fill:none;stroke:var(--dim);stroke-width:1.5;stroke-dasharray:5 4}.chart .ma{fill:none;stroke:var(--green);stroke-width:2}
+.bga{background:var(--amber)}
+.hl{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-top:4px}
 .cg .ln{stroke:var(--green)}.cg .ar{fill:rgba(51,255,102,.1)}
 .cr .ln{stroke:var(--red)}.cr .ar{fill:rgba(255,69,69,.1)}
 .fp{fill:var(--green)}.fn{fill:var(--red)}.fa{fill:var(--amber)}
@@ -172,7 +175,7 @@ label.ck input{width:auto}
 <div class="bar">
   <select data-f="kind" aria-label="Practice"></select>
   <select data-f="stat" aria-label="Outcome">
-    <option value="all">All outcomes</option><option value="up">Lift</option><option value="down">Drop</option>
+    <option value="all">All moods</option><option value="up">Felt better</option><option value="down">Felt worse</option>
   </select>
   <select data-f="range" aria-label="Range"></select>
   <span id="scope" class="dim"></span>
@@ -239,8 +242,8 @@ const fm=m=>{const t=Math.round(m*60);return `${Math.floor(t/60)}:${pad(t%60)}`}
 let S=load();
 const U={kind:'all',stat:'all',range:'all',page:0,month:null};
 function load(){
-  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {log:s.log,notes:s.notes||{}}}catch(e){}
-  return {log:[],notes:{}};
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {log:s.log,notes:s.notes||{},goal:s.goal||70}}catch(e){}
+  return {log:[],notes:{},goal:70};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}}
 function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
@@ -339,8 +342,8 @@ function calendar(){
   }
   tot=r2(tot);
   return `<div class="card">
-  <div class="rowh"><div><p class="h">Practice calendar</p><div class="k">Net shift</div><div class="big ${cls(tot)}">${sg(tot,1)}</div></div>
-   <div>Up: <b class="pos">${wd}</b> &nbsp; Down: <b class="neg">${ld}</b></div></div>
+  <div class="rowh"><div><p class="h">Practice calendar</p><div class="k">Mood shift this month</div><div class="big ${cls(tot)}">${sg(tot,1)}</div></div>
+   <div>Better: <b class="pos">${wd}</b> &nbsp; Worse: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
   <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
    <span class="dim">${td} practice day${td===1?'':'s'} · ${nT} session${nT===1?'':'s'} · ${hm(mT)}</span></div></div>`;
@@ -349,7 +352,7 @@ function calendar(){
 function kinds(T){
   const na='<span class="dim">—</span>',rows=byKind(T).map(g=>`<tr><td><b>${KIND[g.k]}</b></td><td class="r">${g.n}</td><td class="r">${hm(g.m)}</td>
    <td class="r">${g.avg==null?na:`<b class="${cls(g.avg)}">${sg(g.avg,1)}</b>`}</td><td class="r">${g.c?Math.round(g.w/g.c*100)+'%':na}</td><td class="r">${g.qn?(g.q/g.qn).toFixed(1):na}</td></tr>`).join('');
-  return `<div class="card gap"><p class="h">By practice</p><div class="tw"><table class="sm"><thead><tr><th>Practice</th><th class="r">Sessions</th><th class="r">Time</th><th class="r">Avg shift</th><th class="r">Lift rate</th><th class="r">Avg depth</th></tr></thead>
+  return `<div class="card gap"><p class="h">By practice</p><div class="tw"><table class="sm"><thead><tr><th>Practice</th><th class="r">Sessions</th><th class="r">Time</th><th class="r">Avg shift</th><th class="r">Felt better</th><th class="r">Avg depth</th></tr></thead>
   <tbody>${rows||'<tr><td colspan="6" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div></div>`;
 }
 
@@ -368,56 +371,89 @@ function table(T){
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
 }
 
+/* ---------- meditation metrics (the things Headspace / Calm / Insight Timer track) ---------- */
+const TOD=[['Morning',5,12],['Afternoon',12,17],['Evening',17,22],['Night',22,29]];
+const tod=ms=>{const h=new Date(ms).getHours(),x=h<5?h+24:h;return TOD.find(([,a,b])=>x>=a&&x<b)[0]};
+const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
+function mind(T){
+  const all=view(false),now=Date.now(),w0=wkStart(now);
+  const R=T.filter(e=>e.d!=null),up=R.filter(e=>e.d>0).length,dn=R.filter(e=>e.d<0).length;
+  const weeks=[...Array(8)].map((_,i)=>{const a=w0-(7-i)*7*864e5,b=a+7*864e5;return all.filter(e=>e.at>=a&&e.at<b).reduce((s,e)=>s+e.mins,0)});
+  const thisWk=all.filter(e=>e.at>=w0),wkDays=new Set(thisWk.map(e=>e.day)).size;
+  const tb=TOD.map(([n])=>{const x=T.filter(e=>tod(e.at)===n),r=x.filter(e=>e.d!=null);return {n,m:x.reduce((s,e)=>s+e.mins,0),c:x.length,shift:r.length?r.reduce((s,e)=>s+e.d,0)/r.length:null,rc:r.length}});
+  const D={};T.forEach(e=>{const d=D[e.day]??={pre:0,post:0,c:0};if(e.d!=null){d.pre+=e.pre;d.post+=e.post;d.c++}});
+  const md=Object.keys(D).sort().filter(k=>D[k].c);
+  const best=(a,f)=>a.filter(f).sort((x,y)=>y.shift-x.shift)[0];
+  return {R:R.length,up,dn,same:R.length-up-dn,avg:R.length?R.reduce((s,e)=>s+e.d,0)/R.length:null,
+    weeks,wkMin:weeks[7],wkDays,tb,bestTod:best(tb,t=>t.rc>=2),
+    pre:md.map(k=>r2(D[k].pre/D[k].c)),post:md.map(k=>r2(D[k].post/D[k].c)),
+    longest:T.reduce((m,e)=>Math.max(m,e.mins),0),goalWeeks:weeks.filter(m=>m>=S.goal).length};
+}
+// before (dashed) and after (green) on the same 1–10 scale
+function moodChart(pre,post){
+  const w=600,h=160,p=8,n=pre.length;if(n<2)return ND;
+  const x=i=>(p+i*(w-2*p)/(n-1)).toFixed(1),y=v=>(p+(10-v)*(h-2*p)/9).toFixed(1),pl=a=>a.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline class="mb" points="${pl(pre)}"/><polyline class="ma" points="${pl(post)}"/></svg>`;
+}
+const hbar=(label,val,f,c='bga')=>`<div class="ev"><span>${label}</span><b>${val}</b></div><div class="hb"><i class="${c}" style="width:${(Math.min(1,f||0)*100).toFixed(1)}%"></i></div>`;
+
 function render(){
-  const today=ymd(new Date()),T=view(),s=stats(T,U.range in RANGES?today:U.range),n=s.n,nd=s.dk.length,bd=nd-s.dw-s.dl;
-  const pct=(a,b)=>b?Math.round(a/b*100)+'%':'0%';
-  const pfT=s.pf==null?'—':s.pf===Infinity?'&infin;':s.pf.toFixed(2),gs=s.gp+s.gl,mx=Math.max(s.aw,s.al)||1;
+  const today=ymd(new Date()),T=view(),s=stats(T,U.range in RANGES?today:U.range),A=stats(view(false),today),m=mind(T),nd=s.dk.length;
+  const pct=(a,b)=>b?Math.round(a/b*100)+'%':'—',K=byKind(T);
   $('[data-f=kind]').innerHTML='<option value="all">All practices</option>'+Object.entries(KIND).map(([k,v])=>`<option value="${k}"${k===U.kind?' selected':''}>${v}</option>`).join('');
   $('[data-f=range]').innerHTML=Object.entries(RANGES).map(([k,v])=>`<option value="${k}"${k===U.range?' selected':''}>${v}</option>`).join('')+(U.range in RANGES?'':`<option value="${U.range}" selected>${dlabel(U.range)}</option>`);
   $('#scope').textContent=`Statistics for ${U.kind==='all'?'All Practices':KIND[U.kind]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
+  const top=K.slice().sort((a,b)=>b.m-a.m)[0],eff=K.filter(g=>g.c>=2&&g.avg!=null).sort((a,b)=>b.avg-a.avg)[0],mx=Math.max(1,...m.tb.map(t=>t.m)),km=Math.max(1,...K.map(g=>g.m));
 
   $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
- <div class="card"><p class="h">Uplift</p><div class="k">Rated sessions</div><div class="big">${n}</div>
-  ${gauge([[n?s.w/n:0,'sg'],[n?s.be/n:0,'sd'],[n?s.l/n:0,'sr']],n?Math.round(s.wr)+'%':'—')}
-  ${lg('bgp','Lift',s.w,pct(s.w,n))}${lg('bgd','Flat',s.be,pct(s.be,n))}${lg('bgn','Drop',s.l,pct(s.l,n))}</div>
- <div class="card"><p class="h">Day wins</p><div class="k">Practice days</div><div class="big">${nd}</div>
-  ${gauge([[nd?s.dw/nd:0,'sg'],[nd?bd/nd:0,'sd'],[nd?s.dl/nd:0,'sr']],nd?pct(s.dw,nd):'—')}
-  ${lg('bgp','Up days',s.dw,pct(s.dw,nd))}${lg('bgd','Flat days',bd,pct(bd,nd))}${lg('bgn','Down days',s.dl,pct(s.dl,nd))}</div>
- <div class="card"><p class="h">Shift factor</p><div class="k">Factor</div><div class="big">${pfT}</div>
-  ${gauge([[gs?s.gp/gs:0,'sg'],[gs?s.gl/gs:0,'sr']],pfT)}
-  ${lg('bgp','Lift',sg(s.gp,1))}${lg('bgn','Drop',sg(-s.gl))}${lg('bgd','Net',`<span class="${cls(s.tot)}">${sg(s.tot,1)}</span>`)}</div>
- <div class="card"><p class="h">Avg lift/drop</p><div class="k">Average</div><div class="big ${cls(s.aw-s.al)}">${sg(s.aw-s.al,1)}</div>
-  <div class="ev"><span>Lift</span><b class="pos">${sg(s.aw,1)}</b></div><div class="hb"><i class="bgp" style="width:${(s.aw/mx*100).toFixed(1)}%"></i></div>
-  <div class="ev"><span>Drop</span><b class="neg">${sg(-s.al)}</b></div><div class="hb"><i class="bgn" style="width:${(s.al/mx*100).toFixed(1)}%"></i></div>
-  <div class="ev rule"><span class="dim">Expectancy / session</span><b class="${cls(s.exp)}">${sg(s.exp,1)}</b></div></div>
+ <div class="card"><p class="h">Streak</p><div class="k">Days in a row</div><div class="big ${A.dsCur?'pos':''}">${A.dsCur} day${A.dsCur===1?'':'s'}</div>
+  ${gauge([[m.wkDays/7,'sg']],`${m.wkDays}/7`)}
+  ${lg('bgp','Current streak',A.dsCur)}${lg('bgd','Best streak',A.dsMax)}${lg('bga','Days this week',`${m.wkDays} / 7`)}</div>
+ <div class="card"><p class="h">Mindful minutes</p><div class="k">In range</div><div class="big">${hm(s.mins)}</div>
+  ${gauge([[Math.min(1,m.wkMin/S.goal),'sg']],pct(m.wkMin,S.goal))}
+  ${lg('bgp','This week',hm(m.wkMin))}${lg('bga','Weekly goal',hm(S.goal))}${lg('bgd','Average session',s.total?n1(s.mins/s.total)+' min':'—')}</div>
+ <div class="card"><p class="h">Mood shift</p><div class="k">Average, after − before</div><div class="big ${m.avg==null?'':cls(m.avg)}">${m.avg==null?'—':sg(m.avg,1)}</div>
+  ${gauge([[m.R?m.up/m.R:0,'sg'],[m.R?m.same/m.R:0,'sd'],[m.R?m.dn/m.R:0,'sr']],pct(m.up,m.R))}
+  ${lg('bgp','Felt better',m.up,pct(m.up,m.R))}${lg('bgd','Same',m.same,pct(m.same,m.R))}${lg('bgn','Felt worse',m.dn,pct(m.dn,m.R))}</div>
+ <div class="card"><p class="h">Sessions</p><div class="k">In range</div><div class="big">${s.total}</div>
+  ${gauge([[s.depth==null?0:s.depth/10,'sg']],s.depth==null?'—':s.depth.toFixed(1))}
+  ${lg('bgp','Average depth',s.depth==null?'—':s.depth.toFixed(1)+' / 10')}${lg('bgd','Longest session',m.longest?hm(m.longest):'—')}${lg('bga','Practices used',K.length)}</div>
 </section>
 <section class="g g21">
  ${calendar()}
- <div class="card"><p class="h">Evaluation</p>
-  <div class="sec first">Performance</div>
-  ${ev('Expectancy',sg(s.exp,1),s.exp)}${ev('Average per practice day',sg(s.avgDay,1),s.avgDay)}${ev('Biggest lift',sg(Math.max(s.best,0),1),Math.max(s.best,0))}${ev('Biggest drop',sg(Math.min(s.worst,0)),Math.min(s.worst,0))}${ev('Avg before → after',n?`${s.pre.toFixed(1)} → ${s.post.toFixed(1)}`:'—',s.post-s.pre)}
-  <div class="sec">Practice</div>
-  ${ev('Total time',hm(s.mins))}${ev('Sessions',s.total)}${ev('Average session',s.total?n1(s.mins/s.total)+' min':'—')}${ev('Average depth',s.depth==null?'—':s.depth.toFixed(1))}
+ <div class="card"><p class="h">Insights</p>
+  <div class="sec first">What works</div>
+  ${ev('Best time of day',m.bestTod?`${m.bestTod.n} · ${sg(m.bestTod.shift,1)}`:'—',m.bestTod?.shift||0)}
+  ${ev('Most effective practice',eff?`${KIND[eff.k]} · ${sg(eff.avg,1)}`:'—',eff?.avg||0)}
+  ${ev('Most practiced',top?`${KIND[top.k]} · ${hm(top.m)}`:'—')}
+  ${ev('Mood before → after',m.R?`${s.pre.toFixed(1)} → ${s.post.toFixed(1)}`:'—',s.post-s.pre)}
   <div class="sec">Consistency</div>
-  ${ev('Up days / down days',`${s.dw} / ${s.dl}`,s.dw-s.dl)}${ev('Days practiced',nd?`${nd} of ${s.span} · ${Math.round(s.cons)}%`:'—')}${ev('Day streak (now / best)',`${s.dsCur} / ${s.dsMax}`,s.dsCur)}${ev('Session run (W / L)',`${s.lw}W / ${s.ll}L`)}${ev('Last 5 rated',s.last5.map(e=>`<i class="dot ${e.d>0?'bgp':e.d<0?'bgn':'bgd'}"></i>`).join(' ')||'—')}
+  ${ev('Days practiced',nd?`${nd} of ${s.span} · ${Math.round(s.cons)}%`:'—',nd?1:0)}
+  ${ev('Day streak (now / best)',`${A.dsCur} / ${A.dsMax}`,A.dsCur)}
+  ${ev('Weekly goal hit (last 8 weeks)',`${m.goalWeeks} / 8`,m.goalWeeks)}
+  ${ev('Sessions per week',s.span?n1(s.total/Math.max(1,s.span/7)):'—')}
+  <div class="sec">Time</div>
+  ${ev('Total time',hm(s.mins))}${ev('Average session',s.total?n1(s.mins/s.total)+' min':'—')}${ev('Longest session',m.longest?hm(m.longest):'—')}
  </div>
 </section>
 <section class="g g21">
- <div class="card"><div class="rowh"><div><p class="h">Shift curve</p><div class="big ${cls(s.tot)}">${sg(s.tot,1)}</div></div>
-  <div class="eqs">${kv('Lift rate',n?s.wr.toFixed(1)+'%':'—')}${kv('Factor',pfT)}${kv('Rated',n)}${kv('Best',`<span class="${cls(s.best)}">${sg(s.best,1)}</span>`)}${kv('Worst',`<span class="${cls(s.worst)}">${sg(s.worst,1)}</span>`)}</div></div>
-  ${line(s.curve,s.tot<0?'cr':'cg')}</div>
- <div class="card"><p class="h">Performance</p><div class="k">Daily shift</div><div class="big ${cls(s.tot)}">${sg(s.tot,1)}</div>${bars(s.dp,1)}</div>
+ <div class="card"><div class="rowh"><div><p class="h">Mood before → after</p><div class="big ${m.avg==null?'':cls(m.avg)}">${m.avg==null?'—':sg(m.avg,1)}</div></div>
+  <div class="eqs">${kv('Before',m.R?s.pre.toFixed(1):'—')}${kv('After',`<span class="pos">${m.R?s.post.toFixed(1):'—'}</span>`)}${kv('Rated',m.R)}${kv('Felt better',pct(m.up,m.R))}</div></div>
+  ${moodChart(m.pre,m.post)}<div class="hl"><span>- - before</span><span class="pos">— after</span></div></div>
+ <div class="card"><p class="h">Daily minutes</p><div class="k">Minutes per practice day</div><div class="big">${hm(s.mins)}</div>${bars(s.vol)}</div>
 </section>
 <section class="g g3">
- <div class="card"><p class="h">Score</p><div class="k">Composite 0–100</div><div class="big amb">${s.total?s.score:'—'}</div>${radar(s.axes)}</div>
- <div class="card"><p class="h">Volume</p><div class="k">Minutes / day</div><div class="big">${hm(s.mins)}</div>${bars(s.vol)}</div>
- <div class="card"><p class="h">Drawdown</p><div class="k">Max drawdown</div><div class="big ${cls(-s.mdd)}">${sg(-s.mdd)}</div>${line(s.under,'cr')}</div>
+ <div class="card"><p class="h">Weekly minutes</p><div class="k">Last 8 weeks · goal ${hm(S.goal)}</div><div class="big ${m.wkMin>=S.goal?'pos':''}">${hm(m.wkMin)}</div>${bars(m.weeks)}</div>
+ <div class="card"><p class="h">Time of day</p><div class="k">Minutes · average mood shift</div>
+  ${m.tb.map(t=>hbar(t.n,`${hm(t.m)}${t.shift==null?'':` · <span class="${cls(t.shift)}">${sg(t.shift,1)}</span>`}`,t.m/mx)).join('')}</div>
+ <div class="card"><p class="h">Practice mix</p><div class="k">Minutes by practice</div>
+  ${K.length?K.slice().sort((a,b)=>b.m-a.m).map(g=>hbar(KIND[g.k],`${hm(g.m)} · ${g.n}×`,g.m/km)).join(''):ND}</div>
 </section>
 ${kinds(T)}
 ${table(T)}
-<footer><p>State is your own 1–10 rating: 1 = scattered or tense, 10 = calm and clear. Shift = state after − state before. Depth = how settled the session itself was.</p>
- Saved on this device · SYNC shares it across your devices <button data-a="bak">BACKUP JSON</button><button data-a="clear">CLEAR ALL</button></footer>`;
+<footer><p>Mood is your own 1–10 rating before and after: 1 = scattered or tense, 10 = calm and clear. Shift = after − before. Depth = how settled the session itself was.</p>
+ Weekly goal <select data-f="goal" aria-label="Weekly goal">${[35,70,105,140,210,300].map(v=>`<option value="${v}"${v===S.goal?' selected':''}>${hm(v)}</option>`).join('')}</select> · Saved on this device · SYNC shares it across your devices <button data-a="bak">BACKUP JSON</button><button data-a="clear">CLEAR ALL</button></footer>`;
 }
 
 /* ---------- dialogs ---------- */
@@ -735,7 +771,7 @@ const ACT={
   add:()=>entryForm(),go:()=>R?(R.done==null?runView():wrapForm()):startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
   note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
   bak:()=>dl(`mind-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
-  clear:()=>{if(confirm('Delete ALL sessions and notes on this device?')){S={log:[],notes:{}};save();U.range='all';boot()}},
+  clear:()=>{if(confirm('Delete ALL sessions and notes on this device?')){S={log:[],notes:{},goal:S.goal||70};save();U.range='all';boot()}},
   prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
   day:v=>{U.range=U.range===v?'all':v;U.page=0;render()},
   edit:v=>entryForm(S.log.find(t=>t.id===v)),
@@ -744,7 +780,7 @@ const ACT={
 };
 function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFullYear(),m:d.getMonth()};render()}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a])ACT[b.dataset.a](b.dataset.v)});
-document.addEventListener('change',e=>{const k=e.target.dataset.f;if(!k)return;U[k]=e.target.value;U.page=0;render()});
+document.addEventListener('change',e=>{const k=e.target.dataset.f;if(!k)return;if(k==='goal'){S.goal=+e.target.value;save();return render()}U[k]=e.target.value;U.page=0;render()});
 $('#file').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   const txt=await f.text();
@@ -752,7 +788,7 @@ $('#file').addEventListener('change',async e=>{
   try{
     const s=JSON.parse(txt);if(!Array.isArray(s.log))throw 0;
     if(!confirm(`Replace everything here with this backup (${s.log.length} sessions)?`))return;
-    S={log:s.log,notes:s.notes||{}};save();boot();toast('Backup restored');
+    S={log:s.log,notes:s.notes||{},goal:s.goal||70};save();boot();toast('Backup restored');
   }catch(x){toast('Not a valid backup file')}
 });
 
