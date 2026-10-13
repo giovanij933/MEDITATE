@@ -195,6 +195,22 @@ dialog.ss .gp{font-size:15px;line-height:1.6;max-width:32ch;margin:0 auto 12px;c
 dialog.ss p.c{font-size:12px;margin:0 0 8px}
 @media(min-width:700px){dialog.ss{inset:0;margin:auto;width:min(620px,calc(100% - 48px));height:min(900px,calc(100% - 48px));border:1px solid var(--line2)}}
 @media(prefers-reduced-motion:reduce){dialog.ss,dialog.ss>*{animation:none!important}}
+/* choices in a session read as a list, like the live workout's exercises: a dot (a box when you can pick several),
+   the name, a detail on the right. Short sets of options are one segmented bar. */
+dialog.ss .vl{display:flex;flex-direction:column;gap:0;margin:6px 0 20px;border-top:1px solid var(--line)}
+dialog.ss .vl button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;font-size:13px;letter-spacing:0;color:var(--tx);transition:background-color .18s,color .18s}
+dialog.ss .vl button::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;border:1px solid var(--line2);transition:background-color .18s,border-color .18s,box-shadow .18s}
+dialog.ss .vl button.on{color:var(--amber);background:rgba(255,176,0,.06)}
+dialog.ss .vl button.on::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px rgba(255,176,0,.6)}
+dialog.ss .vl.multi button::before{width:14px;height:14px;border-radius:2px;display:grid;place-items:center;font-size:10px;font-weight:600;line-height:1;color:#000}
+dialog.ss .vl.multi button.on::before{content:'✓';box-shadow:none}
+dialog.ss .vl button:hover{color:var(--amber)}
+dialog.ss .vl em{margin-left:auto;font-style:normal;font-size:11px;color:var(--dim);text-align:right}
+dialog.ss .vl button.on em{color:var(--amber)}
+dialog.ss .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;margin:6px 0 20px;border:1px solid var(--line2)}
+dialog.ss .seg button{border:0;border-right:1px solid var(--line2);padding:11px 2px;text-align:center;background:none;font-size:12px;transition:background-color .18s,color .18s}
+dialog.ss .seg button:last-child{border-right:0}
+dialog.ss .seg button.on{background:var(--amber);color:#000}
 </style>
 </head>
 <body>
@@ -226,6 +242,7 @@ dialog.ss p.c{font-size:12px;margin:0 0 8px}
 const KEY='isx.mind.v1', RUN='isx.mind.run', PAGE=20;
 const RANGES={today:'Today',week:'This week',month:'This month',all:'All time'};
 const KIND={M:'Meditation',B:'Breathwork',S:'Body Scan',V:'Visualization',F:'Focus',J:'Journaling'};
+const KDESC={M:'Sit with the breath',B:'Paced breathing',S:'Relax part by part',V:'Rehearse it first',F:'One point, steady',J:'Write it out'};
 const TECH={
   M:['Breath counting','Open awareness','Noting'],
   B:['Box 4-4-4-4','Resonance 5.5','Physiological sigh','4-7-8'],
@@ -627,8 +644,8 @@ function startForm(){
   let kind=U.kind!=='all'?U.kind:last?.kind||'M';
   const lastTech=k=>S.log.filter(x=>x.kind===k&&x.tech).sort((a,b)=>b.at-a.at)[0]?.tech||TECH[k][0];
   dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
-  <div class="chips" id="kd">${Object.entries(KIND).map(([k,v])=>`<button type="button" data-k="${k}">${v}</button>`).join('')}</div>
-  <span class="k">Technique</span><div class="chips" id="td"></div>
+  <span class="k">Practice</span><div class="vl" id="kd">${Object.entries(KIND).map(([k,v])=>`<button type="button" data-k="${k}">${v}<em>${KDESC[k]}</em></button>`).join('')}</div>
+  <span class="k">Technique</span><div class="vl" id="td"></div>
   <span class="k">Minutes</span>
   <div class="chips">${[5,10,15,20,30,45].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${P.mins??10}"></div>
   <div class="fgrid">
