@@ -20,7 +20,7 @@
 :root{
   color-scheme:dark;
   --bg:#070707;--panel:#0c0c0c;--line:#1c1c1c;--line2:#2c2c2c;
-  --tx:#d9d5c8;--dim:#78746a;--amber:#ffb000;--green:#33ff66;--red:#ff4545;
+  --tx:#d9d5c8;--dim:#8f8a7e;--amber:#ffb000;--green:#33ff66;--red:#ff4545;
   --f:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
@@ -104,7 +104,7 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .radar .rv{fill:rgba(255,176,0,.16);stroke:var(--amber);stroke-width:1.5}
 .radar text{fill:var(--dim);font:10px var(--f);letter-spacing:.08em}
 
-.tw{overflow-x:auto}
+.tw{overflow-x:auto;position:relative}
 table{width:100%;min-width:980px;border-collapse:collapse}
 table.sm{min-width:560px}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -212,11 +212,12 @@ dialog.ss .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;ma
 dialog.ss .seg button{border:0;border-right:1px solid var(--line2);padding:11px 2px;text-align:center;background:none;font-size:12px;transition:background-color .18s,color .18s}
 dialog.ss .seg button:last-child{border-right:0}
 dialog.ss .seg button.on{background:var(--amber);color:#000}
+h1.brand{margin:0}
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="brand">ISIONXXX <b>//</b> MIND<i class="cur"></i></div>
+  <h1 class="brand">ISIONXXX <b>//</b> MIND<i class="cur"></i></h1>
   <div class="acts">
     <button class="pri" data-a="go">&#9654; START</button>
     <button data-a="add">+ LOG</button>
@@ -423,7 +424,7 @@ function calendar(){
 function kinds(T){
   const na='<span class="dim">—</span>',rows=byKind(T).map(g=>`<tr><td><b>${KIND[g.k]}</b></td><td class="r">${g.n}</td><td class="r">${hm(g.m)}</td>
    <td class="r">${g.avg==null?na:`<b class="${cls(g.avg)}">${sg(g.avg,1)}</b>`}</td><td class="r">${g.c?Math.round(g.w/g.c*100)+'%':na}</td><td class="r">${g.qn?(g.q/g.qn).toFixed(1):na}</td></tr>`).join('');
-  return `<div class="card gap"><p class="h">By practice</p><div class="tw"><table class="sm"><thead><tr><th>Practice</th><th class="r">Sessions</th><th class="r">Time</th><th class="r">Avg shift</th><th class="r">Felt better</th><th class="r">Avg depth</th></tr></thead>
+  return `<div class="card gap"><p class="h">By practice</p><div class="tw" tabindex="0" role="region" aria-label="Sessions by practice"><table class="sm"><thead><tr><th>Practice</th><th class="r">Sessions</th><th class="r">Time</th><th class="r">Avg shift</th><th class="r">Felt better</th><th class="r">Avg depth</th></tr></thead>
   <tbody>${rows||'<tr><td colspan="6" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div></div>`;
 }
 
@@ -437,7 +438,7 @@ function table(T){
    <td class="dim" title="${esc(e.note)}">${esc(e.note.length>44?e.note.slice(0,43)+'…':e.note)}</td>
    <td class="r"><button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete session">X</button></td></tr>`).join('');
   return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
-  <div class="tw"><table><thead><tr><th>Time (local)</th><th>Practice</th><th>Technique</th><th class="r">Min</th><th class="r">Before</th><th class="r">After</th><th class="r">Depth</th><th class="r">Shift</th><th>Note</th><th></th></tr></thead>
+  <div class="tw" tabindex="0" role="region" aria-label="Session log"><table><thead><tr><th>Time (local)</th><th>Practice</th><th>Technique</th><th class="r">Min</th><th class="r">Before</th><th class="r">After</th><th class="r">Depth</th><th class="r">Shift</th><th>Note</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="10" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div>
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
 }
