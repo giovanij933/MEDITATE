@@ -89,6 +89,7 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .eqs{display:flex;gap:22px;flex-wrap:wrap}
 .eqs div{display:flex;flex-direction:column;gap:2px}
 .chart{display:block;width:100%;height:160px}
+.cap{font-size:10.5px;color:var(--dim);margin-top:6px;letter-spacing:.04em}
 .chart *{vector-effect:non-scaling-stroke}
 .chart .ln{fill:none;stroke-width:1.5}
 .chart .z{stroke:var(--line2);stroke-dasharray:4 4}
@@ -226,6 +227,7 @@ h1.brand{margin:0}
     <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
   </div>
 </header>
+<div id="top"></div>
 <div class="bar">
   <select data-f="kind" aria-label="Practice"></select>
   <select data-f="stat" aria-label="Outcome">
@@ -364,21 +366,20 @@ function gauge(segs,label){
 }
 // a chart is ~600 px wide: more points than that only costs time and memory. Keep each bucket's low and high, in
 // order, so peaks and drawdowns still show.
-function thin(v,max=300){
-  if(v.length<=max)return v;
-  const out=[],b=v.length/(max/2);
-  for(let i=0;i<v.length;i+=b){const s=v.slice(Math.floor(i),Math.floor(i+b));if(!s.length)continue;let lo=0,hi=0;s.forEach((x,j)=>{if(x<s[lo])lo=j;if(x>s[hi])hi=j});out.push(...(lo<hi?[s[lo],s[hi]]:[s[hi],s[lo]]))}
-  out.push(v[v.length-1]);return out;
-}
+// long ranges: average runs of k neighbours so every bar or point stays readable on a phone (the newest run ends
+// on the latest value). Returns the values and k, so the chart can say what one bar stands for.
+function bucket(v,max){const n=v.length;if(n<=max)return{v,k:1};const k=Math.ceil(n/max),o=[];for(let e=n;e>0;e-=k){const s=v.slice(Math.max(0,e-k),e);o.unshift(s.reduce((a,x)=>a+(+x||0),0)/s.length)}return{v:o,k}}
+const cap=(k,what='days')=>k>1?`<div class="cap">Each bar averages ${k} ${what}</div>`:'';
 function line(vals,c){
-  vals=thin(vals);
+  vals=bucket(vals,120).v;
   const w=600,h=160,p=6,n=vals.length;if(n<2)return ND;
   const lo=Math.min(0,...vals),hi=Math.max(0,...vals),rg=hi-lo||1;
   const x=i=>(p+i*(w-2*p)/(n-1)).toFixed(1),y=v=>(p+(hi-v)*(h-2*p)/rg).toFixed(1);
   const pts=vals.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
   return `<svg class="chart ${c}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polygon class="ar" points="${x(0)},${y(0)} ${pts} ${x(n-1)},${y(0)}"/><line class="z" x1="0" x2="${w}" y1="${y(0)}" y2="${y(0)}"/><polyline class="ln" points="${pts}"/></svg>`;
 }
-function bars(vals,signed){
+function bars(vals,signed){const B=bucket(vals,60);return bars0(B.v,signed)+cap(B.k)}
+function bars0(vals,signed){
   const w=600,h=160,p=6,n=vals.length;if(!n)return ND;
   const lo=Math.min(0,...vals),hi=Math.max(0,...vals),rg=hi-lo||1,step=(w-2*p)/n,bw=Math.min(180,step*.7);
   const y=v=>p+(hi-v)*(h-2*p)/rg;
@@ -477,7 +478,8 @@ function render(){
   $('#scope').textContent=`Statistics for ${U.kind==='all'?'All Practices':KIND[U.kind]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
   const top=K.slice().sort((a,b)=>b.m-a.m)[0],eff=K.filter(g=>g.c>=2&&g.avg!=null).sort((a,b)=>b.avg-a.avg)[0],mx=Math.max(1,...m.tb.map(t=>t.m)),km=Math.max(1,...K.map(g=>g.m));
 
-  $('#app').innerHTML=heroToday()+`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#top').innerHTML=heroToday();
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Streak</p><div class="k">Days in a row</div><div class="big ${A.dsCur?'pos':''}">${A.dsCur} day${A.dsCur===1?'':'s'}</div>
   ${gauge([[m.wkDays/7,'sg']],`${m.wkDays}/7`)}
@@ -887,7 +889,7 @@ function heroToday(){
     action:{label:'▶ Start session',attrs:{'data-a':'go'}},
     log:T.map(e=>({at:e.at,tag:KIND[e.kind],text:`${e.tech?e.tech+' · ':''}${Math.round(+e.mins||0)} min${e.pre!=null&&e.post!=null?` · mood ${e.pre}→${e.post}`:''}`,tone:e.pre!=null&&e.post!=null?(e.post>e.pre?'pos':e.post<e.pre?'neg':''):''}))});
 }
-{const r0=render;render=function(...a){r0.apply(this,a);UI.animate($('#app'),{onDone:l=>toast(`${l.join(' + ')} goal met ✓`)})};UI.animate($('#app'))}
+{const r0=render;render=function(...a){r0.apply(this,a);UI.animate($('#app'));UI.animate($('#top'),{onDone:l=>toast(`${l.join(' + ')} goal met ✓`)})};UI.animate($('#top'));UI.animate($('#app'))}
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
