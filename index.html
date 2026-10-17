@@ -898,7 +898,7 @@ function heroToday(){
   const R=T.filter(e=>e.pre!=null&&e.post!=null),sh=R.length?R.reduce((a,e)=>a+e.post-e.pre,0)/R.length:null;
   return UI.hero({key:'mind',title:'Today',sub:T.length?`${min} min · ${T.length} session${T.length>1?'s':''}${sh!=null?` · mood ${sh>0?'+':''}${Math.round(sh*10)/10}`:''}`:'No session yet today',
     big:{value:String(st),label:`day streak`},
-    rings:[{key:'today',label:'Today',value:min,max:daily,display:`${min}/${daily} min`},{key:'week',label:'Week',value:wk,max:S.goal||70,display:`${wk}/${S.goal||70}`},{key:'streak',label:'Streak',value:Math.min(st,7),max:7,display:`${st} day${st===1?'':'s'}`}],
+    rings:[{key:'today',label:'Today',value:min,max:daily,display:`${min}/${daily} min`},{key:'week',label:'Week',value:wk,max:S.goal||70,display:`${wk}/${S.goal||70}`},{key:'streak',label:'Streak',value:Math.min(st,7),max:7,display:`${st} day${st===1?'':'s'}`,done:T.length>0}],   // done once today's session keeps it going
     action:{label:'▶ Start session',attrs:{'data-a':'go'}},
     log:T.map(e=>({at:e.at,tag:KIND[e.kind],text:`${e.tech?e.tech+' · ':''}${Math.round(+e.mins||0)} min${e.pre!=null&&e.post!=null?` · mood ${e.pre}→${e.post}`:''}`,tone:e.pre!=null&&e.post!=null?(e.post>e.pre?'pos':e.post<e.pre?'neg':''):''}))});
 }
