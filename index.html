@@ -884,8 +884,8 @@ function heroToday(){
   return UI.hero({key:'mind',title:'Today',sub:T.length?`${min} min · ${T.length} session${T.length>1?'s':''}${sh!=null?` · mood ${sh>0?'+':''}${Math.round(sh*10)/10}`:''}`:'No session yet today',
     big:{value:String(st),label:`day streak`},
     rings:[{key:'today',label:'Today',value:min,max:daily,display:`${min}/${daily} min`},{key:'week',label:'Week',value:wk,max:S.goal||70,display:`${wk}/${S.goal||70}`},{key:'streak',label:'Streak',value:Math.min(st,7),max:7,display:`${st} day${st===1?'':'s'}`}],
-    action:{label:'▶ Start session',attrs:{'data-a':'go'}}})
-  +UI.timeline({items:T.map(e=>({at:e.at,tag:KIND[e.kind],text:`${e.tech?e.tech+' · ':''}${Math.round(+e.mins||0)} min${e.pre!=null&&e.post!=null?` · mood ${e.pre}→${e.post}`:''}`,tone:e.pre!=null&&e.post!=null?(e.post>e.pre?'pos':e.post<e.pre?'neg':''):''})),empty:'No sessions yet today. Start one and it shows up here.'});
+    action:{label:'▶ Start session',attrs:{'data-a':'go'}},
+    log:T.map(e=>({at:e.at,tag:KIND[e.kind],text:`${e.tech?e.tech+' · ':''}${Math.round(+e.mins||0)} min${e.pre!=null&&e.post!=null?` · mood ${e.pre}→${e.post}`:''}`,tone:e.pre!=null&&e.post!=null?(e.post>e.pre?'pos':e.post<e.pre?'neg':''):''}))});
 }
 {const r0=render;render=function(...a){r0.apply(this,a);UI.animate($('#app'),{onDone:l=>toast(`${l.join(' + ')} goal met ✓`)})};UI.animate($('#app'))}
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
