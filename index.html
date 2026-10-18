@@ -150,6 +150,15 @@ textarea{resize:vertical}
 label.ck{flex-direction:row;align-items:center;gap:8px;margin:2px 0 8px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--tx)}
 label.ck input{width:auto}
 [hidden]{display:none!important}
+/* daily review: a script to read top to bottom (scoped to the dialog: .rv is also the live session screen) */
+dialog.rvd{width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+.rvh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.rvh h3{margin:0;flex:1}
+.rvd .rv{border-top:1px solid var(--line);padding:14px 0 4px;font-size:14px;line-height:1.7}
+.rvd .rv h4{margin:0 0 6px;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.rvd .rv p{margin:0 0 8px}.rvd .rv b{font-weight:600}.rvd .rv q{color:var(--dim);font-style:italic}
+.rvd .rv ol,.rvd .rv ul{margin:0 0 8px;padding-left:22px}.rvd .rv li{margin:0 0 6px}.rvd .rv li::marker{color:var(--dim)}
+.rvd .rv .tr{display:block;color:var(--dim);font-size:12px}
+.rvd .rv blockquote{margin:0 0 8px;padding:2px 0 2px 12px;border-left:2px solid var(--amber);white-space:pre-wrap}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--amber);color:var(--amber);padding:8px 14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
 #toast.on{opacity:1}
 
@@ -223,6 +232,7 @@ h1.brand{margin:0}
     <button class="pri" data-a="go">&#9654; START</button>
     <button data-a="add">+ LOG</button>
     <button data-a="imp">IMPORT</button>
+    <button data-a="review">REVIEW</button>
     <button data-a="note">NOTES</button>
     <button data-a="set">SETTINGS</button>
     <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
@@ -849,6 +859,94 @@ function sample(){
 }
 
 /* ---------- events ---------- */
+/* ---------- daily review: a script to read over at the end of each practice day ----------
+   Built from the day's sessions (in the practice filter), the days before it, your notes and the morning check-in.
+   Plain sentences first, then the sessions in order, what went well, what to look at, and questions to answer. */
+function rvDays(){return [...new Set(S.log.filter(e=>U.kind==='all'||e.kind===U.kind).map(e=>ymd(new Date(e.at))))].sort()}
+function rvDefault(){
+  const D=rvDays(),t=ymd(new Date());
+  return /^\d{4}-/.test(U.range)&&D.includes(U.range)?U.range:D.includes(t)?t:D.filter(d=>d<=t).at(-1)||D.at(-1);
+}
+function review(day){
+  const all=S.log.filter(e=>U.kind==='all'||e.kind===U.kind).map(e=>({...e,day:ymd(new Date(e.at)),d:e.pre!=null&&e.post!=null?r2(e.post-e.pre):null}));
+  const T=all.filter(e=>e.day===day).sort((a,b)=>a.at-b.at),n=T.length,R=T.filter(e=>e.d!=null),Q=T.filter(e=>e.depth!=null);
+  const pl=(k,w)=>`${k} ${w}${k===1?'':'s'}`,ck=ms=>new Date(ms).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null,and=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a.at(-1);
+  const mn=m=>m>=60?hm(m):n1(m)+' min',sh=v=>`<b class="${cls(v)}">${sg(v,1)}</b>`,name=e=>`${esc(e.tech)||KIND[e.kind]}`,mood=e=>`${e.pre} → ${e.post} (${sh(e.d)})`;
+  const sec=(h,b)=>b?`<section class="rv"><h4>${h}</h4>${b}</section>`:'';
+  const mins=T.reduce((a,e)=>a+e.mins,0),pre=avg(R.map(e=>e.pre)),post=avg(R.map(e=>e.post)),shift=avg(R.map(e=>e.d)),dep=avg(Q.map(e=>e.depth));
+  const K=[...new Set(T.map(e=>e.kind))],up=R.filter(e=>e.d>0),flat=R.filter(e=>e.d<=0);
+  // the day
+  let out=sec('The day',`<p>On <b>${pd(day).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</b> you did ${U.kind==='all'?pl(n,'session'):`${n} ${KIND[U.kind]} session${n===1?'':'s'}`} for <b>${mn(mins)}</b>${n>1?' in total':''}`+
+    `${U.kind==='all'?`: ${and(K.map(k=>KIND[k]))}`:''}. `+
+    (R.length?`Your mood went from <b>${n1(pre)}</b> to <b>${n1(post)}</b>${R.length>1?' on average':''}, a shift of ${sh(shift)}${R.length<n?` (${R.length} of ${n} sessions rated)`:''}. `:'None of the sessions were rated before and after, so there is no mood shift to read. ')+
+    `${dep!=null?`${Q.length>1?'Average depth':'Depth'} was <b>${n1(dep)}/10</b>.`:''}</p>`);
+  // in context: the 20 practice days before, the week so far, the streak
+  const D={};all.forEach(e=>{(D[e.day]??={m:0,d:[]}).m+=e.mins;if(e.d!=null)D[e.day].d.push(e.d)});
+  const days=Object.keys(D).sort(),prev=days.filter(k=>k<day).slice(-20),am=avg(prev.map(k=>D[k].m)),as=avg(prev.flatMap(k=>D[k].d));
+  const w0=wkStart(pd(day).getTime()),wk=all.filter(e=>e.at>=w0&&e.day<=day),wm=wk.reduce((a,e)=>a+e.mins,0),wb=wm-mins,wd=new Set(wk.map(e=>e.day)).size;
+  let st=0;for(const c=pd(day);D[ymd(c)];c.setDate(c.getDate()-1))st++;
+  const last=prev.at(-1),gap=last?dd(last,day):0,low=shift!=null&&as!=null&&shift<as-.5;
+  const vs=(a,b,t,w)=>a>b*(1+t)?`<b>${w[0]}</b>`:a<b*(1-t)?`<b>${w[1]}</b>`:w[2];
+  out+=sec('In context',(prev.length?`<p>Over your last ${pl(prev.length,'practice day')} you averaged ${mn(am)} a day, so today was ${vs(mins,am,.15,['longer than usual','shorter than usual','about your usual length'])}. `+
+    (shift!=null&&as!=null?`Your usual shift is ${sh(as)} per session, and today's ${sh(shift)} was ${shift>as+.3?'<b>higher</b>':shift<as-.3?'<b>lower</b>':'about the same'}.`:'')+`</p>`
+    :`<p>This is the first practice day in your log${U.kind==='all'?'':` for ${KIND[U.kind]}`}, so there is nothing to compare it with yet.</p>`)+
+    `<p>Week to date (from Sunday): <b>${mn(wm)}</b> over ${pl(wd,'day')}, ${wm>=S.goal?`<b class="pos">past</b> your ${hm(S.goal)} weekly goal`:`${Math.round(wm/S.goal*100)}% of your ${hm(S.goal)} weekly goal with ${mn(S.goal-wm)} to go`}.`+
+    `${st>=2?` That makes <b>${st} days in a row</b>.`:''}</p>`);
+  // the sessions in order
+  out+=sec('How it unfolded',`<ol>${T.map(e=>`<li>${ck(e.at)} · <b>${KIND[e.kind]}${e.tech?` · ${esc(e.tech)}`:''}</b> · ${mn(e.mins)} · ${e.d!=null?mood(e):'not rated'}${e.depth!=null?` · depth ${e.depth}`:''}`+
+    `${e.note?`<span class="tr"> <q>${esc(e.note)}</q></span>`:''}</li>`).join('')}</ol>`);
+  // what went well / what to look at
+  const best=up.reduce((a,e)=>e.d>(a?.d??0)?e:a,null),morn=T.filter(e=>tod(e.at)==='Morning'),short=T.filter(e=>e.mins<5),shallow=T.filter(e=>e.depth!=null&&e.depth<=4);
+  const good=[],look=[];
+  if(best)good.push(`Biggest lift: ${name(best)} at ${ck(best.at)}, ${mood(best)}.`);
+  if(st>=2)good.push('You kept your streak going.');
+  if(wm>=S.goal&&wb<S.goal)good.push(`This day took you past your weekly goal of ${hm(S.goal)}.`);
+  if(morn.length)good.push(`You practiced in the morning (${ck(morn[0].at)}), before the day got going.`);
+  if(R.length>=2&&!flat.length)good.push(`Every rated session left you feeling better.`);
+  if(dep!=null&&dep>=7)good.push(`${Q.length>1?'Deep sessions: an average depth of':'A deep session: depth'} ${n1(dep)}/10.`);
+  if(flat.length)look.push(`${flat.length===1?'One session':pl(flat.length,'session')} left you the same or worse: ${flat.map(e=>`${name(e)} at ${ck(e.at)}, ${mood(e)}`).join('; ')}.`);
+  if(short.length)look.push(`${short.length===1?'A very short session':pl(short.length,'very short session')}: ${short.map(e=>`${mn(e.mins)} of ${name(e)}`).join(', ')}. Fine as a reset, but it is hard to settle in under 5 minutes.`);
+  if(shallow.length)look.push(`Low depth on ${and(shallow.map(e=>`${name(e)} (${e.depth}/10)`))}. What got in the way?`);
+  if(gap>1)look.push(`No practice the day before: your last ${U.kind==='all'?'':KIND[U.kind]+' '}session was ${gap===2?'two days':`${gap} days`} earlier, on ${dlabel(last)}, so the streak started over.`);
+  if(low)look.push(`Your ${R.length>1?'average ':''}shift today (${sg(shift,1)}) was below your usual (${sg(as,1)}).`);
+  out+=sec('What went well',good.length?`<ul>${good.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<p>Nothing stands out in the numbers. Showing up still counts.</p>');
+  out+=sec('What to look at',look.length?`<ul>${look.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<p>No warning signs in the numbers.</p>');
+  // the morning check-in for this date, when there is one
+  let ci=null;try{ci=(JSON.parse(localStorage.getItem('isx.checkin.v1'))?.log||[]).find(e=>e.day===day)}catch(e){}
+  if(ci){const Qs=['','poor','restless','OK','good','great'],E=['','drained','low','steady','good','charged'];
+    out+=sec('Your state',`<p>You slept <b>${ci.sleep} h</b> (${Qs[ci.q]||'—'} sleep) and your energy was <b>${E[ci.energy]||'—'}</b>.${ci.sleep<7&&low?' Short sleep and a smaller lift than usual: worth watching if it repeats.':''}</p>`)}
+  out+=sec('Your notes',S.notes[day]?`<blockquote>${esc(S.notes[day])}</blockquote>`:'<p>No notes for this day yet.</p>');
+  // questions, most specific first
+  const q=['How did you feel an hour after practicing? Did the calm last?'];
+  if(flat.length)q.push(`What was going on just before ${name(flat[0])} at ${ck(flat[0].at)}?`);
+  if(shallow.length)q.push(`What pulled your attention during ${name(shallow[0])}, and what would help next time?`);
+  if(gap>1)q.push('What got in the way of practicing the day before?');
+  if(best)q.push(`What made ${name(best)} work today? Could you set that up again tomorrow?`);
+  if(!morn.length)q.push('Could a short session fit in tomorrow morning?');
+  if(wm<S.goal&&ymd(new Date(wkStart(Date.now())))===ymd(new Date(w0)))q.push(`Where will the ${mn(S.goal-wm)} left for your weekly goal fit in?`);
+  q.push('One thing to keep doing tomorrow. One thing to change.');
+  out+=sec('Questions to answer',`<ol>${q.map(x=>`<li>${x}</li>`).join('')}</ol>`);
+  return out;
+}
+function reviewForm(day){
+  const D=rvDays();if(!D.length)return toast('No sessions to review yet');
+  day=D.includes(day)?day:rvDefault();const i=D.indexOf(day);
+  dlg.classList.add('rvd');dlg.addEventListener('close',()=>dlg.classList.remove('rvd'),{once:true});
+  dlg.innerHTML=`<div class="rvh"><h3>DAILY REVIEW // ${dlabel(day).toUpperCase()}</h3>
+    <button type="button" data-a="rvgo" data-v="${D[i-1]||''}" ${i>0?'':'disabled'} aria-label="Previous practice day">&lt;</button><button type="button" data-a="rvgo" data-v="${D[i+1]||''}" ${i<D.length-1?'':'disabled'} aria-label="Next practice day">&gt;</button></div>
+    <div id="rvb">${review(day)}</div>
+    <div class="fa2"><span><button type="button" data-a="rvcopy">COPY</button></span><button type="button" data-a="rvnote" data-v="${day}">WRITE NOTES</button><button type="button" class="pri" data-a="x">DONE</button></div>`;
+  if(!dlg.open)dlg.showModal();
+  dlg.querySelector('#rvb').scrollTop=0;dlg.scrollTop=0;
+}
+// plain text of the review, for pasting into a notes app
+function reviewText(){
+  const b=$('#rvb');if(!b)return '';
+  return [dlg.querySelector('.rvh h3').textContent,...[...b.querySelectorAll('.rv')].map(x=>[x.querySelector('h4').textContent.toUpperCase(),
+    ...[...x.children].slice(1).map(el=>el.matches('ol,ul')?[...el.children].map((li,i)=>`${el.matches('ol')?i+1+'.':'-'} ${li.textContent.replace(/\s+/g,' ').trim()}`).join('\n'):el.textContent.trim())].join('\n'))].join('\n\n');
+}
+
 /* ---------- settings: everything that used to sit in the footer, behind the header's SETTINGS button ---------- */
 function settingsForm(){
   dlg.innerHTML=`<h3>SETTINGS</h3>
@@ -865,6 +963,8 @@ const ACT={
   set:()=>settingsForm(),sync:()=>{dlg.close();document.getElementById('isx-sync')?.click()},
   add:()=>entryForm(),go:()=>R?(R.done==null?runView():wrapForm()):startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
   note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
+  review:()=>reviewForm(rvDefault()),rvgo:v=>v&&reviewForm(v),rvnote:v=>{dlg.classList.remove('rvd');noteForm(v)},
+  rvcopy:()=>{const t=reviewText();(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Review copied'),()=>toast('Copy failed — select the text instead'))},
   bak:()=>dl(`mind-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
   clear:()=>{if(confirm('Delete ALL sessions and notes on this device?')){S={log:[],notes:{},goal:S.goal||70};save();U.range='all';boot()}},
   prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
