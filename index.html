@@ -895,7 +895,7 @@ function review(day){
     `${st>=2?` That makes <b>${st} days in a row</b>.`:''}</p>`);
   // the sessions in order
   out+=sec('How it unfolded',`<ol>${T.map(e=>`<li>${ck(e.at)} · <b>${KIND[e.kind]}${e.tech?` · ${esc(e.tech)}`:''}</b> · ${mn(e.mins)} · ${e.d!=null?mood(e):'not rated'}${e.depth!=null?` · depth ${e.depth}`:''}`+
-    `${e.note?`<span class="tr"> <q>${esc(e.note)}</q></span>`:''}</li>`).join('')}</ol>`);
+    `${e.note?`<span class="tr"><span class="ui-sr"> · </span><q>${esc(e.note)}</q></span>`:''}</li>`).join('')}</ol>`);
   // what went well / what to look at
   const best=up.reduce((a,e)=>e.d>(a?.d??0)?e:a,null),morn=T.filter(e=>tod(e.at)==='Morning'),short=T.filter(e=>e.mins<5),shallow=T.filter(e=>e.depth!=null&&e.depth<=4);
   const good=[],look=[];
