@@ -834,9 +834,14 @@ function sample(){
    [7,6,10,'S','NSDR',20,5,7.5,8,''],[6,6,10,'M','Open awareness',20,6,7.5,8,''],
    [5,6,15,'V','Session rehearsal',8,6.5,7.5,7,''],[5,21,30,'J','Evening review',15,5,6.5,_,''],
    [4,6,10,'B','Resonance 5.5',12,5,7.5,8,''],[3,6,10,'M','Breath counting',20,6,6,5,''],
-   [2,6,10,'S','NSDR',15,4.5,7,7,''],[1,6,10,'F','Single-point',15,6,7,7,''],[1,8,45,'V','Session rehearsal',6,7,7.5,7,'']]
-  .forEach(([ago,h,mi,kind,tech,mins,pre,post,depth,note])=>
-    S.log.push({id:uid(),at:new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago,h,mi).getTime(),kind,tech,mins,pre,post,depth,note}));
+   [2,6,10,'S','NSDR',15,4.5,7,7,''],[1,6,10,'F','Single-point',15,6,7,7,''],[1,8,45,'V','Session rehearsal',6,7,7.5,7,''],
+   [0,6,15,'B','Box 4-4-4-4',10,5,7,7,''],[0,8,40,'V','Session rehearsal',6,6.5,7.5,7,'']]
+  .forEach(([ago,h,mi,kind,tech,mins,pre,post,depth,note])=>{
+    // the sample runs up to today: a session that hasn't happened yet today moves to just before now (or is left out
+    // before the day has room for it)
+    let at=new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago,h,mi).getTime();const lim=n-(mins+5)*6e4;
+    if(at>lim){if(new Date(lim).getDate()!==n.getDate()||S.log.some(e=>e.at>=lim-(mins+5)*6e4))return;at=lim}
+    S.log.push({id:uid(),at,kind,tech,mins,pre,post,depth,note})});
   save();boot();
 }
 
