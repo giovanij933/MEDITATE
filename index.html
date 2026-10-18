@@ -34,7 +34,7 @@ button:hover,select:hover{border-color:var(--amber);color:var(--amber)}
 .pri{background:var(--amber);border-color:var(--amber);color:#000;font-weight:600}
 .pri:hover{color:#000;filter:brightness(1.12)}
 .pos{color:var(--green)}.neg{color:var(--red)}.dim{color:var(--dim)}.amb{color:var(--amber)}
-.bgp{background:var(--green)}.bgn{background:var(--red)}.bgd{background:var(--line2)}
+.bgp{background:var(--green)}.bgn{background:var(--red)}.bgd{background:var(--line2)}.bgm{background:var(--dim)}
 .r{text-align:right}
 
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--line)}
@@ -484,16 +484,16 @@ function render(){
 <section class="g g4">
  <div class="card"><p class="h">Streak</p><div class="k">Days in a row</div><div class="big ${A.dsCur?'pos':''}">${A.dsCur} day${A.dsCur===1?'':'s'}</div>
   ${gauge([[m.wkDays/7,'sg']],`${m.wkDays}/7`)}
-  ${lg('bgp','Current streak',A.dsCur)}${lg('bgd','Best streak',A.dsMax)}${lg('bga','Days this week',`${m.wkDays} / 7`)}</div>
+  ${lg('bgp','Days this week',`${m.wkDays} / 7`)}${lg('bgd','Current streak',A.dsCur)}${lg('bgd','Best streak',A.dsMax)}</div>
  <div class="card"><p class="h">Mindful minutes</p><div class="k">In range</div><div class="big">${hm(s.mins)}</div>
   ${gauge([[Math.min(1,m.wkMin/S.goal),'sg']],pct(m.wkMin,S.goal))}
-  ${lg('bgp','This week',hm(m.wkMin))}${lg('bga','Weekly goal',hm(S.goal))}${lg('bgd','Average session',s.total?n1(s.mins/s.total)+' min':'—')}</div>
+  ${lg('bgp','This week',hm(m.wkMin))}${lg('bgd','Weekly goal',hm(S.goal))}${lg('bgd','Average session',s.total?n1(s.mins/s.total)+' min':'—')}</div>
  <div class="card"><p class="h">Mood shift</p><div class="k">Average, after − before</div><div class="big ${m.avg==null?'':cls(m.avg)}">${m.avg==null?'—':sg(m.avg,1)}</div>
   ${gauge([[m.R?m.up/m.R:0,'sg'],[m.R?m.same/m.R:0,'sd'],[m.R?m.dn/m.R:0,'sr']],pct(m.up,m.R))}
-  ${lg('bgp','Felt better',m.up,pct(m.up,m.R))}${lg('bgd','Same',m.same,pct(m.same,m.R))}${lg('bgn','Felt worse',m.dn,pct(m.dn,m.R))}</div>
+  ${lg('bgp','Felt better',m.up,pct(m.up,m.R))}${lg('bgm','Same',m.same,pct(m.same,m.R))}${lg('bgn','Felt worse',m.dn,pct(m.dn,m.R))}</div>
  <div class="card"><p class="h">Sessions</p><div class="k">In range</div><div class="big">${s.total}</div>
   ${gauge([[s.depth==null?0:s.depth/10,'sg']],s.depth==null?'—':s.depth.toFixed(1))}
-  ${lg('bgp','Average depth',s.depth==null?'—':s.depth.toFixed(1)+' / 10')}${lg('bgd','Longest session',m.longest?hm(m.longest):'—')}${lg('bga','Practices used',K.length)}</div>
+  ${lg('bgp','Average depth',s.depth==null?'—':s.depth.toFixed(1)+' / 10')}${lg('bgd','Longest session',m.longest?hm(m.longest):'—')}${lg('bgd','Practices used',K.length)}</div>
 </section>
 <section class="g g21">
  ${calendar()}
