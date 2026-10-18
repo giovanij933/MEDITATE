@@ -430,8 +430,11 @@ function kinds(T){
   <tbody>${rows||'<tr><td colspan="6" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div></div>`;
 }
 
+// the log's columns, for sorting and filtering (UI.filter); the last column holds the row's buttons
+const LOGC=[{label:'Time (local)',get:e=>e.at,type:'time'},{label:'Practice',get:e=>KIND[e.kind]},{label:'Technique',get:e=>e.tech},{label:'Min',get:e=>e.mins,type:'num'},
+  {label:'Before',get:e=>e.pre,type:'num'},{label:'After',get:e=>e.post,type:'num'},{label:'Depth',get:e=>e.depth,type:'num'},{label:'Shift',get:e=>e.d,type:'num'},{label:'Note',get:e=>e.note},null];
 function table(T){
-  const rows=[...T].reverse(),pages=Math.max(1,Math.ceil(rows.length/PAGE)),na='<span class="dim">—</span>';
+  const F=UI.filter('log',LOGC,()=>{U.page=0;render()}),rows=F.apply([...T].reverse()),pages=Math.max(1,Math.ceil(rows.length/PAGE)),na='<span class="dim">—</span>';
   U.page=Math.min(Math.max(U.page,0),pages-1);
   const body=rows.slice(U.page*PAGE,(U.page+1)*PAGE).map(e=>`<tr>
    <td>${tfmt(e.at)}</td><td><b>${KIND[e.kind]}</b></td><td class="dim">${esc(e.tech)||'—'}</td>
@@ -440,9 +443,9 @@ function table(T){
    <td class="dim" title="${esc(e.note)}">${esc(e.note.length>44?e.note.slice(0,43)+'…':e.note)}</td>
    <td class="r"><button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete session">X</button></td></tr>`).join('');
   return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
-  <div class="tw" tabindex="0" role="region" aria-label="Session log"><table><thead><tr><th>Time (local)</th><th>Practice</th><th>Technique</th><th class="r">Min</th><th class="r">Before</th><th class="r">After</th><th class="r">Depth</th><th class="r">Shift</th><th>Note</th><th><span class="ui-sr">Actions</span></th></tr></thead>
+  <div class="tw" tabindex="0" role="region" aria-label="Session log"><table><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th class="r">${F.th(7)}</th><th>${F.th(8)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="10" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div>
-  <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}</span></div></div>`;
+  <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}${F.clear()}</span></div></div>`;
 }
 
 /* ---------- meditation metrics (the things Headspace / Calm / Insight Timer track) ---------- */
