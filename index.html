@@ -341,7 +341,7 @@ let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on
 // skip leaves filters out (comma-separated): a card that sets a filter shows everything else, with its own choice highlighted
 const mood=d=>d==null?null:d>0?'up':d<0?'down':'same';
 function view(useRange=true,skip=''){
-  const today=ymd(new Date()),wk=s=>{const d=pd(s);d.setDate(d.getDate()-d.getDay());return ymd(d)};
+  const today=ymd(new Date()),wk=s=>{const d=pd(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d)};
   const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?wk(d)===wk(today):U.range==='month'?d.slice(0,7)===today.slice(0,7):d===U.range);
   const x=U.x,sk=skip.split(','),on=k=>!sk.includes(k)&&x[k]!=null;
   let T=S.log.map(e=>({...e,day:ymd(new Date(e.at)),d:e.pre!=null&&e.post!=null?r2(e.post-e.pre):null}))
@@ -444,7 +444,7 @@ const kv=(k,v)=>`<div><span class="k">${k}</span><b>${v}</b></div>`;
 
 function calendar(){
   const D={};view(false).forEach(e=>{D[e.day]??={d:0,n:0,m:0};D[e.day].d+=e.d||0;D[e.day].n++;D[e.day].m+=e.mins});
-  const {y,m}=U.month,lead=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),rows=Math.ceil((lead+dim)/7),today=ymd(new Date());
+  const {y,m}=U.month,lead=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate(),rows=Math.ceil((lead+dim)/7),today=ymd(new Date());
   const cell=(p,mm)=>`<b class="${cls(p)}">${sg(p,1)}</b><em>${hm(mm)}</em>`;
   let h='',tot=0,nT=0,mT=0,wd=0,ld=0,td=0;
   for(let r=0;r<rows;r++){
@@ -454,7 +454,7 @@ function calendar(){
       if(d<1||d>dim){h+='<div class="cd off"></div>';continue}
       const k=`${y}-${pad(m+1)}-${pad(d)}`,x=D[k],p=x?r2(x.d):0;
       if(x){ws+=p;wm+=x.m;wn++;tot+=p;nT+=x.n;mT+=x.m;td++;if(p>0)wd++;else if(p<0)ld++}
-      h+=`<button class="cd${c%6?'':' we'}${p>0?' p':p<0?' n':x?' z':''}${k===U.range?' sel':''}${k===today?' now':''}" data-a="day" data-v="${k}"><span>${d}${S.notes[k]?' <i class="amb">*</i>':''}</span>${x?cell(p,x.m):''}</button>`;
+      h+=`<button class="cd${c<5?'':' we'}${p>0?' p':p<0?' n':x?' z':''}${k===U.range?' sel':''}${k===today?' now':''}" data-a="day" data-v="${k}"><span>${d}${S.notes[k]?' <i class="amb">*</i>':''}</span>${x?cell(p,x.m):''}</button>`;
     }
     h+=`<div class="cd wk">${wn?cell(r2(ws),wm):'<em>—</em>'}</div>`;
   }
@@ -462,7 +462,7 @@ function calendar(){
   return `<div class="card">
   <div class="rowh"><div><p class="h">Practice calendar</p><div class="k">Mood shift this month</div><div class="big ${cls(tot)}">${sg(tot,1)}</div></div>
    <div>Better: <b class="pos">${wd}</b> &nbsp; Worse: <b class="neg">${ld}</b></div></div>
-  <div class="cal">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
+  <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
   <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
    <span class="dim">${td} practice day${td===1?'':'s'} · ${nT} session${nT===1?'':'s'} · ${hm(mT)}</span></div></div>`;
 }
@@ -495,7 +495,7 @@ function table(T){
 /* ---------- meditation metrics (the things Headspace / Calm / Insight Timer track) ---------- */
 const TOD=[['Morning',5,12],['Afternoon',12,17],['Evening',17,22],['Night',22,29]];
 const tod=ms=>{const h=new Date(ms).getHours(),x=h<5?h+24:h;return TOD.find(([,a,b])=>x>=a&&x<b)[0]};
-const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return d.getTime()};
+const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getTime()};
 // time-of-day buckets: minutes, sessions and the average shift of the rated ones
 const todB=T=>TOD.map(([n])=>{const x=T.filter(e=>tod(e.at)===n),r=x.filter(e=>e.d!=null);return {n,m:x.reduce((s,e)=>s+e.mins,0),c:x.length,shift:r.length?r.reduce((s,e)=>s+e.d,0)/r.length:null,rc:r.length}});
 // all: every range, for the week cards; it leaves out the week filter so the weekly bars all show
@@ -948,7 +948,7 @@ function review(day){
   out+=sec('In context',(prev.length?`<p>Over my last ${pl(prev.length,'practice day')} I averaged ${mn(am)} a day, so today was ${vs(mins,am,.15,['longer than usual','shorter than usual','about my usual length'])}. `+
     (shift!=null&&as!=null?`My usual shift is ${sh(as)} per session, and today's ${sh(shift)} was ${shift>as+.3?'<b>higher</b>':shift<as-.3?'<b>lower</b>':'about the same'}.`:'')+`</p>`
     :`<p>This is the first practice day in my log${U.kind==='all'?'':` for ${KIND[U.kind]}`}, so there is nothing to compare it with yet.</p>`)+
-    `<p>Week to date (from Sunday): <b>${mn(wm)}</b> over ${pl(wd,'day')}, ${wm>=S.goal?`<b class="pos">past</b> my ${hm(S.goal)} weekly goal`:`${Math.round(wm/S.goal*100)}% of my ${hm(S.goal)} weekly goal with ${mn(S.goal-wm)} to go`}.`+
+    `<p>Week to date (from Monday): <b>${mn(wm)}</b> over ${pl(wd,'day')}, ${wm>=S.goal?`<b class="pos">past</b> my ${hm(S.goal)} weekly goal`:`${Math.round(wm/S.goal*100)}% of my ${hm(S.goal)} weekly goal with ${mn(S.goal-wm)} to go`}.`+
     `${st>=2?` That makes <b>${st} days in a row</b>.`:''}</p>`);
   // the sessions in order
   out+=sec('How it unfolded',`<ol>${T.map(e=>`<li>${ck(e.at)} · <b>${KIND[e.kind]}${e.tech?` · ${esc(e.tech)}`:''}</b> · ${mn(e.mins)} · ${e.d!=null?mood(e):'not rated'}${e.depth!=null?` · depth ${e.depth}`:''}`+
