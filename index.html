@@ -1026,6 +1026,7 @@ const ACT={
   clear:()=>{if(confirm('Delete ALL sessions and notes on this device?')){S={log:[],notes:{},goal:S.goal||70};save();U.range='all';boot()}},
   prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
   day:v=>{U.range=U.range===v?'all':v;U.page=0;render()},
+  rng:v=>{U.range=U.range===v?'all':v;U.page=0;render()},   // the Today card's period tiles; tap again for all time
   xf:v=>{const i=v.indexOf(':'),k=v.slice(0,i);let x=v.slice(i+1);if(k==='wk')x=+x;
     if(k==='kind'||k==='stat')U[k]=U[k]===x?'all':x;else if(U.x[k]===x)delete U.x[k];else U.x[k]=x;U.page=0;render()},
   xclr:k=>{if(k==='kind'||k==='stat'||k==='range')U[k]='all';else delete U.x[k];U.page=0;render()},
@@ -1064,14 +1065,19 @@ addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx
 /* ---------- today at a glance (shared hero, timeline and motion from ui.js) ---------- */
 function heroToday(){
   if(!S.log.length)return '';
-  const day=ms=>ymd(new Date(ms)),t=day(Date.now()),T=S.log.filter(e=>day(e.at)===t);
-  const min=Math.round(T.reduce((a,e)=>a+(+e.mins||0),0)),daily=Math.round((S.goal||70)/7);
-  const ws=wkStart(Date.now()),wk=Math.round(S.log.filter(e=>e.at>=ws).reduce((a,e)=>a+(+e.mins||0),0));
+  const day=ms=>ymd(new Date(ms)),t=day(Date.now()),T=S.log.filter(e=>day(e.at)===t),goal=S.goal||70,daily=Math.round(goal/7);
+  // each tile is what the dashboard shows for that range (same week and month starts), with no practice, mood or card filters
+  const per=k=>{const r=U.range;U.range=k;const V=view(true,'kind,stat,tod,wk,run');U.range=r;return{m:Math.round(V.reduce((a,e)=>a+e.mins,0)),n:V.length,d:new Set(V.map(e=>e.day)).size}};
+  const td=per('today'),wk=per('week'),mo=per('month');
   const days=new Set(S.log.map(e=>day(e.at)));let st=0;{const d=new Date();if(!days.has(day(d)))d.setDate(d.getDate()-1);while(days.has(day(d))&&st<3650){st++;d.setDate(d.getDate()-1)}}
   const R=T.filter(e=>e.pre!=null&&e.post!=null),sh=R.length?R.reduce((a,e)=>a+e.post-e.pre,0)/R.length:null;
-  return UI.hero({key:'mind',title:'Today',sub:T.length?`${min} min · ${T.length} session${T.length>1?'s':''}${sh!=null?` · mood ${sh>0?'+':''}${Math.round(sh*10)/10}`:''}`:'No session yet today',
-    big:{value:String(st),label:`day streak`,tone:T.length?'pos':st?'':'neg'},   // green: kept today · red: no streak
-    rings:[{key:'today',label:'Today',value:min,max:daily,display:`${min}/${daily} min`},{key:'week',label:'Week',value:wk,max:S.goal||70,display:`${wk}/${S.goal||70}`},{key:'streak',label:'Streak',value:Math.min(st,7),max:7,display:`${st} day${st===1?'':'s'}`,done:T.length>0}],   // done once today's session keeps it going
+  const pl=(n,w)=>`${n} ${w}${n===1?'':'s'}`,mn=m=>m>=60?hm(m):`${m} min`;
+  const tile=(k,label,x,sub,ok)=>({label,value:x.n?mn(x.m):'—',tone:ok?'pos':'',sub,attrs:{'data-a':'rng','data-v':k,'aria-label':`${label}: ${x.n?mn(x.m):'no sessions'}. Show ${label.toLowerCase()} below`},on:U.range===k});
+  const gl=td.m>=daily?"Today's goal done ✓":`${daily-td.m} min to today's goal`;
+  return UI.hero({key:'mind',title:'Today',sub:gl+(st?` · ${st}-day streak`:''),
+    stats:[tile('today','Today',td,td.n?pl(td.n,'session')+(sh!=null?` · mood ${sh>0?'+':''}${Math.round(sh*10)/10}`:''):'no session yet',td.m>=daily),
+      tile('week','Week',wk,wk.m>=goal?`${pl(wk.d,'day')} · goal ✓`:`${wk.m} of ${goal} goal`,wk.m>=goal),
+      tile('month','Month',mo,mo.n?pl(mo.d,'day'):'no sessions yet',false)],
     action:{label:'▶ Start session',attrs:{'data-a':'go'}},
     log:T.map(e=>({at:e.at,tag:KIND[e.kind],text:`${e.tech?e.tech+' · ':''}${Math.round(+e.mins||0)} min${e.pre!=null&&e.post!=null?` · mood ${e.pre}→${e.post}`:''}`,tone:e.pre!=null&&e.post!=null?(e.post>e.pre?'pos':e.post<e.pre?'neg':''):''}))});
 }
