@@ -763,12 +763,13 @@ function plan(){
   return TOD.map(([,h0,h1])=>{
     const s=suggest(null,h0)[0],k=KIND[s.kind],full=`${k} · ${s.tech}`,long=full.length>28,pre=`${long?k+' · ':''}${s.mins} min · `;
     const w=!s.kat?`new for you · suits the ${s.tod}`:`${s.tat?'':'new technique · '}least recent ${s.tod} practice`;
-    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+((pre+w).length>64?`least recent ${s.tod} practice`:w),act:'go',done};
+    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+((pre+w).length>64?`least recent ${s.tod} practice`:w),act:'plan',done};
   });
 }
 
-function startForm(){
-  const P=pref(),SG=suggest(U.kind!=='all'?U.kind:null);let si=0,kind=SG[0].kind,tech=SG[0].tech;
+// only: the practice to rotate (the practice filter by default; TODAY's plan passes null for the unfiltered pick)
+function startForm(only=U.kind!=='all'?U.kind:null){
+  const P=pref(),SG=suggest(only);let si=0,kind=SG[0].kind,tech=SG[0].tech;
   const lastTech=k=>S.log.filter(x=>x.kind===k&&x.tech).sort((a,b)=>b.at-a.at)[0]?.tech||TECH[k][0];
   dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
   <div class="sg" id="sg"><p><b>SUGGESTED</b><span id="why"></span></p><button type="button" id="nx" title="Next suggestion">↻ ANOTHER</button></div>
@@ -1104,7 +1105,9 @@ if(R)R.done==null?runView():wrapForm();
 addEventListener('storage',e=>{if(e.key===KEY){S=load();render();UI.replan()}});
 // another ISIONXXX app can send you straight to an action here (REWIRE's LOG buttons): #do=<action> or a message
 // 'today' (from TODAY's rings and timeline): drop any card filters and show just today, as a chip you can clear
-function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
+// 'plan' (TODAY's plan card): START with the card's unfiltered pick, whatever practice filter is set here
+function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}
+  if(a==='plan')return R?ACT.go():startForm(null);const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
 addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx==='do')doAct(e.data.act)});
 {const m=/do=(\w+)/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>doAct(m[1]),0)}}
 /* ---------- today at a glance (shared hero, timeline and motion from ui.js) ---------- */
