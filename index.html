@@ -339,7 +339,7 @@ function load(){
   try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {log:s.log,notes:s.notes||{},goal:s.goal||70}}catch(e){}
   return {log:[],notes:{},goal:70};
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}UI.replan()}
 function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),3200)}
 
@@ -500,7 +500,7 @@ function table(T){
 
 /* ---------- meditation metrics (the things Headspace / Calm / Insight Timer track) ---------- */
 const TOD=[['Morning',5,12],['Afternoon',12,17],['Evening',17,22],['Night',22,29]];
-const tod=ms=>{const h=new Date(ms).getHours(),x=h<5?h+24:h;return TOD.find(([,a,b])=>x>=a&&x<b)[0]};
+const todH=h=>{const x=h<5?h+24:h;return TOD.find(([,a,b])=>x>=a&&x<b)[0]},tod=ms=>todH(new Date(ms).getHours());
 const wkStart=ms=>{const d=new Date(ms);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getTime()};
 // time-of-day buckets: minutes, sessions and the average shift of the rated ones
 const todB=T=>TOD.map(([n])=>{const x=T.filter(e=>tod(e.at)===n),r=x.filter(e=>e.d!=null);return {n,m:x.reduce((s,e)=>s+e.mins,0),c:x.length,shift:r.length?r.reduce((s,e)=>s+e.d,0)/r.length:null,rc:r.length}});
@@ -739,8 +739,9 @@ function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{l
 const FIT={Morning:'BFVMJ',Afternoon:'FBMV',Evening:'SJMB',Night:'SJMB'};
 const WHEN={'Morning pages':'Morning','Evening review':'Evening Night'};
 const CHIPS=[5,10,15,20,30,45];
-function suggest(only){
-  const t=tod(Date.now()),ks=FIT[t],part=t.toLowerCase();
+// h: the local hour to suggest for (TODAY's plan asks for each part of the day)
+function suggest(only,h=new Date().getHours()){
+  const t=todH(h),ks=FIT[t],part=t.toLowerCase();
   const lastAt=f=>S.log.reduce((a,e)=>f(e)&&e.at>a?e.at:a,0);
   const byAge=(xs,f)=>xs.map((x,i)=>({x,i,at:lastAt(f(x))})).sort((a,b)=>a.at-b.at||a.i-b.i);
   const techs=k=>byAge(TECH[k].filter(x=>!WHEN[x]||WHEN[x].includes(t)),x=>e=>e.kind===k&&e.tech===x);
@@ -755,6 +756,16 @@ const lr=s=>`${s.n?['2nd','3rd','4th'][s.n-1]||s.n+1+'th':''} least recent`.trim
 const why=s=>!s.kat?`New for you: ${KIND[s.kind]} · ${s.tech} — suits the ${s.tod}`
   :s.only?(s.tat?`${KIND[s.kind]} · ${s.tech} — your ${lr(s)} ${KIND[s.kind]} technique (last: ${ago(s.tat)})`:`New for you: ${s.tech}`)
   :`${KIND[s.kind]} · ${s.tech} — ${s.tat?'your':'new for you, in your'} ${lr(s)} ${s.tod} practice (last: ${ago(s.kat)})`;
+// TODAY's plan card: START's first suggestion for each part of the day, and whether you practiced today already.
+// A name too long for the title moves the practice to the line below.
+function plan(){
+  const t=ymd(new Date()),done=S.log.some(e=>ymd(new Date(e.at))===t);
+  return TOD.map(([,h0,h1])=>{
+    const s=suggest(null,h0)[0],k=KIND[s.kind],full=`${k} · ${s.tech}`,long=full.length>28,pre=`${long?k+' · ':''}${s.mins} min · `;
+    const w=!s.kat?`new for you · suits the ${s.tod}`:`${s.tat?'':'new technique · '}least recent ${s.tod} practice`;
+    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+((pre+w).length>64?`least recent ${s.tod} practice`:w),act:'go',done};
+  });
+}
 
 function startForm(){
   const P=pref(),SG=suggest(U.kind!=='all'?U.kind:null);let si=0,kind=SG[0].kind,tech=SG[0].tech;
@@ -1087,9 +1098,10 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
+UI.planner('mind',[KEY],plan);
 if(R)R.done==null?runView():wrapForm();
 // a session logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
-addEventListener('storage',e=>{if(e.key===KEY){S=load();render()}});
+addEventListener('storage',e=>{if(e.key===KEY){S=load();render();UI.replan()}});
 // another ISIONXXX app can send you straight to an action here (REWIRE's LOG buttons): #do=<action> or a message
 // 'today' (from TODAY's rings and timeline): drop any card filters and show just today, as a chip you can clear
 function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
