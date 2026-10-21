@@ -229,6 +229,12 @@ dialog.ss .vl.multi button.on::before{content:'✓';box-shadow:none}
 dialog.ss .vl button:hover{color:var(--amber)}
 dialog.ss .vl em{margin-left:auto;font-style:normal;font-size:11px;color:var(--dim);text-align:right}
 dialog.ss .vl button.on em{color:var(--amber)}
+/* the suggested session on the start screen: why it was picked, and a shuffle to the next one */
+dialog.ss .sg{display:flex;align-items:center;gap:10px;margin:0 0 20px;padding:10px 12px;border:1px solid rgba(255,176,0,.3);background:rgba(255,176,0,.05);transition:opacity .18s}
+dialog.ss .sg p{flex:1;font-size:12px;line-height:1.5}
+dialog.ss .sg p b{display:block;font-size:10px;font-weight:600;letter-spacing:.18em;color:var(--amber)}
+dialog.ss .sg button{flex:none;border-color:var(--line2);background:none;color:var(--dim);font-size:11px;padding:7px 10px}
+dialog.ss .sg.off{opacity:.55}
 dialog.ss .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;margin:6px 0 20px;border:1px solid var(--line2)}
 dialog.ss .seg button{border:0;border-right:1px solid var(--line2);padding:11px 2px;text-align:center;background:none;font-size:12px;transition:background-color .18s,color .18s}
 dialog.ss .seg button:last-child{border-right:0}
@@ -726,15 +732,39 @@ function breath(ms){
 const settling=()=>R.settle&&elapsed()<60000;
 function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}try{speechSynthesis.cancel()}catch(e){}wake(false)}
 
+// START suggests a well-rounded practice: among the practices that suit the time of day, the one done least recently
+// (never done first), then its least recent technique, so over the days every practice and technique comes round.
+// It uses the same parts of the day as the stats; night winds down like the evening. Filtered to one practice, it
+// rotates that practice's techniques instead. A technique named for a time of day only comes up then.
+const FIT={Morning:'BFVMJ',Afternoon:'FBMV',Evening:'SJMB',Night:'SJMB'};
+const WHEN={'Morning pages':'Morning','Evening review':'Evening Night'};
+const CHIPS=[5,10,15,20,30,45];
+function suggest(only){
+  const t=tod(Date.now()),ks=FIT[t],part=t.toLowerCase();
+  const lastAt=f=>S.log.reduce((a,e)=>f(e)&&e.at>a?e.at:a,0);
+  const byAge=(xs,f)=>xs.map((x,i)=>({x,i,at:lastAt(f(x))})).sort((a,b)=>a.at-b.at||a.i-b.i);
+  const techs=k=>byAge(TECH[k].filter(x=>!WHEN[x]||WHEN[x].includes(t)),x=>e=>e.kind===k&&e.tech===x);
+  // your usual length: the median of the last five sessions, on the nearest chip
+  const usual=k=>{const m=S.log.filter(e=>e.kind===k&&+e.mins>0).sort((a,b)=>b.at-a.at).slice(0,5).map(e=>+e.mins).sort((a,b)=>a-b),n=m.length;
+    if(!n)return 10;const md=n%2?m[n>>1]:(m[n/2-1]+m[n/2])/2;return CHIPS.reduce((a,c)=>Math.abs(c-md)<Math.abs(a-md)?c:a)};
+  if(only){const kat=lastAt(e=>e.kind===only);return techs(only).map((t,n)=>({kind:only,tech:t.x,mins:usual(only),tod:part,kat,tat:t.at,only,n}))}
+  return byAge([...ks],k=>e=>e.kind===k).map((p,n)=>{const t=techs(p.x)[0];return {kind:p.x,tech:t.x,mins:usual(p.x),tod:part,kat:p.at,tat:t.at,n}});
+}
+const ago=t=>{const d=Math.round((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/864e5);return d<1?'today':d<2?'yesterday':d+' days ago'};
+const lr=s=>`${s.n?['2nd','3rd','4th'][s.n-1]||s.n+1+'th':''} least recent`.trim();
+const why=s=>!s.kat?`New for you: ${KIND[s.kind]} · ${s.tech} — suits the ${s.tod}`
+  :s.only?(s.tat?`${KIND[s.kind]} · ${s.tech} — your ${lr(s)} ${KIND[s.kind]} technique (last: ${ago(s.tat)})`:`New for you: ${s.tech}`)
+  :`${KIND[s.kind]} · ${s.tech} — ${s.tat?'your':'new for you, in your'} ${lr(s)} ${s.tod} practice (last: ${ago(s.kat)})`;
+
 function startForm(){
-  const last=S.log.reduce((a,b)=>!a||b.at>a.at?b:a,null),P=pref();
-  let kind=U.kind!=='all'?U.kind:last?.kind||'M';
+  const P=pref(),SG=suggest(U.kind!=='all'?U.kind:null);let si=0,kind=SG[0].kind,tech=SG[0].tech;
   const lastTech=k=>S.log.filter(x=>x.kind===k&&x.tech).sort((a,b)=>b.at-a.at)[0]?.tech||TECH[k][0];
   dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
+  <div class="sg" id="sg"><p><b>SUGGESTED</b><span id="why"></span></p><button type="button" id="nx" title="Next suggestion">↻ ANOTHER</button></div>
   <span class="k">Practice</span><div class="vl" id="kd">${Object.entries(KIND).map(([k,v])=>`<button type="button" data-k="${k}">${v}<em>${KDESC[k]}</em></button>`).join('')}</div>
   <span class="k">Technique</span><div class="vl" id="td"></div>
   <span class="k">Minutes</span>
-  <div class="chips">${[5,10,15,20,30,45].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${P.mins??10}"></div>
+  <div class="chips">${CHIPS.map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${SG[0].mins}"></div>
   <div class="fgrid">
    <label>Interval bell<select name="bells">${[[0,'Off'],[1,'Every minute'],[2,'Every 2 min'],[5,'Every 5 min'],[10,'Every 10 min']].map(([v,l])=>`<option value="${v}"${v===(P.bells??0)?' selected':''}>${l}</option>`).join('')}</select></label>
    <label>Intention (optional)<input name="intent" autocomplete="off" placeholder="Patience. Stay with the breath."></label>
@@ -743,20 +773,23 @@ function startForm(){
   <label class="ck" id="o-voice"><input type="checkbox" name="voice"${P.voice??true?' checked':''}> Read the prompts aloud</label>
   ${rpick('pre','State before (optional)')}
   <div class="fa2"><span class="dim" id="md"></span><button type="button" class="ghost" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
-  const f=$('#sf'),e=f.elements;let tech=lastTech(kind);
+  const f=$('#sf'),e=f.elements;
   const DESC={breath:'Breathe with the bubble',sit:'Quiet screen, soft light',guide:'Prompts with a soft bell',write:'Prompts and a writing pad'};
   const paint=()=>{
     f.querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on',b.dataset.k===kind));
     $('#td').innerHTML=TECH[kind].map(t=>`<button type="button" data-t="${esc(t)}"${t===tech?' class="on"':''}>${esc(t)}</button>`).join('');
     f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));
     const m=mode(kind);$('#o-settle').hidden=m!=='sit';$('#o-voice').hidden=m!=='guide';$('#md').textContent=DESC[m];
+    $('#sg').classList.toggle('off',kind!==SG[si].kind||tech!==SG[si].tech);
   };
+  const use=i=>{si=i%SG.length;({kind,tech}=SG[si]);e.mins.value=SG[si].mins;$('#why').textContent=why(SG[si]);paint()};
   f.addEventListener('click',ev=>{
+    if(ev.target.closest('#nx'))return use(si+1);
     const k=ev.target.closest('[data-k]'),t=ev.target.closest('[data-t]'),m=ev.target.closest('[data-m]');
     if(k){kind=k.dataset.k;tech=lastTech(kind)}if(t)tech=t.dataset.t;if(m)e.mins.value=m.dataset.m;
     if(k||t||m)paint();
   });
-  f.addEventListener('input',paint);paint();
+  f.addEventListener('input',paint);use(0);
   f.addEventListener('submit',ev=>{
     ev.preventDefault();const now=Date.now(),m=mode(kind);
     const p={mins:e.mins.value===''?'':+e.mins.value,bells:+e.bells.value,settle:e.settle.checked,voice:e.voice.checked};
@@ -766,7 +799,7 @@ function startForm(){
       note:m==='write'?(STEPS[tech]||STEPS[kind]).join('\n\n\n')+'\n\n':''};
     bell(3);if(R.voice)say(' ');keepRun();runView();
   });
-  sheet();dlg.showModal();
+  sheet();dlg.showModal();f.querySelector('.pri').focus();
 }
 function runView(){
   const m=mode(R.kind),S1=steps(),vis=R.tech==='Candle'?' flame':R.tech==='Single-point'?' pin':'';
