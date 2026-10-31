@@ -256,7 +256,7 @@ h1.brand{margin:0}
   </div>
 </header>
 <div id="top"></div>
-<div class="bar">
+<div class="bar" role="region" aria-label="Filters">
   <select data-f="kind" aria-label="Practice"></select>
   <select data-f="stat" aria-label="Outcome">
     <option value="all">All moods</option><option value="up">Felt better</option><option value="same">Felt the same</option><option value="down">Felt worse</option>
@@ -308,7 +308,11 @@ const ALIAS={
 const $=s=>document.querySelector(s), dlg=$('#dlg');
 // session screens (start, live, done) open as a full-screen sheet; other dialogs keep the usual box
 const sheet=()=>dlg.classList.add('ss');
-dlg.addEventListener('close',()=>dlg.classList.remove('ss'));
+// focus goes back to what opened the dialog, but a save redraws it (a log row's EDIT) and the ··· menu hides its items:
+// then its new copy, else START, instead of the top of the page
+let opener=null;
+dlg.addEventListener('close',()=>{dlg.classList.remove('ss');const o=opener;opener=null;setTimeout(()=>{if(dlg.open||document.activeElement&&document.activeElement!==document.body)return;
+  const a=o?.dataset.a,v=o?.dataset.v,t=a&&document.querySelector(`[data-a="${a}"]${v?`[data-v="${CSS.escape(v)}"]`:''}`);(t?.offsetParent?t:$('[data-a=go]')).focus()})});
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -328,16 +332,24 @@ const sg=(v,plus)=>{const a=Math.abs(v).toFixed(1);return (a==='0.0'?'':v<0?'-':
 const hm=m=>{m=Math.round(m);return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`};
 const cls=v=>v>0?'pos':v<0?'neg':'dim';
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-// minutes from "12:30", "1:02:15" or "12.5"; and back to m:ss
-const pm=s=>{s=String(s??'').trim();if(!s)return 0;if(s.includes(':')){const p=s.split(':').map(Number);return (p.length>2?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60)||0}return parseFloat(s)||0};
+// minutes from "12:30", "1:02:15", "12.5" or "12,5" (a decimal comma); and back to m:ss
+const pm=s=>{s=String(s??'').trim().replace(',','.');if(!s)return 0;if(s.includes(':')){const p=s.split(':').map(Number);return (p.length>2?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60)||0}return parseFloat(s)||0};
 const fm=m=>{const t=Math.round(m*60);return `${Math.floor(t/60)}:${pad(t%60)}`};
 
 /* ---------- state ---------- */
 let S=load();
 const U={kind:'all',stat:'all',range:'all',page:0,month:null,x:{}};   // x: cross-filters set by clicking a card (tod, wk, run); practice and mood use U.kind and U.stat
+let RD='';   // the day the page was last drawn for
 function load(){
-  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return {log:s.log,notes:s.notes||{},goal:s.goal||70}}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.log))return norm(s)}catch(e){}
   return {log:[],notes:{},goal:70};
+}
+// saved data as the app needs it: sessions with no time or practice (another app's backup, a hand edit, a bad sync)
+// are left out and the rest get numbers and text where they belong, so one wrong-typed value can't stop every render
+function norm(s){
+  const nn=v=>v==null||v===''||!isFinite(v)?null:+v;
+  return {log:s.log.filter(e=>e&&Number.isFinite(e.at)&&KIND.hasOwnProperty(e.kind)).map(e=>({...e,id:String(e.id??uid()),mins:+e.mins||0,tech:String(e.tech??''),note:String(e.note??''),pre:nn(e.pre),post:nn(e.post),depth:nn(e.depth)})),
+    notes:s.notes&&typeof s.notes==='object'&&!Array.isArray(s.notes)?s.notes:{},goal:+s.goal>0?+s.goal:70};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Storage write failed — take a backup')}UI.replan()}
 function setMonth(ms){const d=new Date(ms);U.month={y:d.getFullYear(),m:d.getMonth()}}
@@ -491,7 +503,7 @@ function table(T){
    <td class="r">${n1(e.mins)}</td><td class="r">${e.pre??na}</td><td class="r">${e.post??na}</td><td class="r">${e.depth??na}</td>
    <td class="r">${e.d==null?na:`<b class="${cls(e.d)}">${sg(e.d,1)}</b>`}</td>
    <td class="dim" title="${esc(e.note)}">${esc(e.note.length>44?e.note.slice(0,43)+'…':e.note)}</td>
-   <td class="r"><button data-a="edit" data-v="${e.id}">EDIT</button> <button data-a="del" data-v="${e.id}" aria-label="Delete session">X</button></td></tr>`).join('');
+   <td class="r"><button data-a="edit" data-v="${esc(e.id)}">EDIT</button> <button data-a="del" data-v="${esc(e.id)}" aria-label="Delete session">X</button></td></tr>`).join('');
   return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
   <div class="tw" tabindex="0" role="region" aria-label="Session log"><table><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th class="r">${F.th(7)}</th><th>${F.th(8)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="10" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div>
@@ -508,14 +520,17 @@ const todB=T=>TOD.map(([n])=>{const x=T.filter(e=>tod(e.at)===n),r=x.filter(e=>e
 function mind(T,all=view(false,'wk')){
   const now=Date.now(),w0=wkStart(now);
   const R=T.filter(e=>e.d!=null),up=R.filter(e=>e.d>0).length,dn=R.filter(e=>e.d<0).length;
-  const weeks=[...Array(8)].map((_,i)=>{const a=w0-(7-i)*7*864e5,b=a+7*864e5;return all.filter(e=>e.at>=a&&e.at<b).reduce((s,e)=>s+e.mins,0)});
+  // week starts by the calendar, not 7×24 h back: across a DST change those land an hour off Monday 00:00, which
+  // misfiles Monday's first hour and leaves the bar's week filter (wkStart of each session) matching nothing
+  const w0s=[...Array(8)].map((_,i)=>{const d=new Date(w0);d.setDate(d.getDate()-(7-i)*7);return wkStart(d.getTime())}),W={};
+  all.forEach(e=>{const k=wkStart(e.at);W[k]=(W[k]||0)+e.mins});const weeks=w0s.map(k=>W[k]||0);
   const thisWk=all.filter(e=>e.at>=w0),wkDays=new Set(thisWk.map(e=>e.day)).size;
   const tb=todB(T);
   const D={};T.forEach(e=>{const d=D[e.day]??={pre:0,post:0,c:0};if(e.d!=null){d.pre+=e.pre;d.post+=e.post;d.c++}});
   const md=Object.keys(D).sort().filter(k=>D[k].c);
   const best=(a,f)=>a.filter(f).sort((x,y)=>y.shift-x.shift)[0];
   return {R:R.length,up,dn,same:R.length-up-dn,avg:R.length?R.reduce((s,e)=>s+e.d,0)/R.length:null,
-    weeks,w0s:weeks.map((_,i)=>w0-(7-i)*7*864e5),wkMin:weeks[7],w0,wkDays,tb,bestTod:best(tb,t=>t.rc>=2),md,
+    weeks,w0s,wkMin:weeks[7],w0,wkDays,tb,bestTod:best(tb,t=>t.rc>=2),md,
     pre:md.map(k=>r2(D[k].pre/D[k].c)),post:md.map(k=>r2(D[k].post/D[k].c)),
     longest:T.reduce((m,e)=>Math.max(m,e.mins),0),goalWeeks:weeks.filter(m=>m>=S.goal).length};
 }
@@ -543,7 +558,7 @@ function xfBar(){
 }
 
 function render(){
-  const today=ymd(new Date()),T=view(),s=stats(T,U.range in RANGES?today:U.range),A=stats(view(false,'run'),today),m=mind(T),nd=s.dk.length;
+  const today=RD=ymd(new Date()),T=view(),s=stats(T,U.range in RANGES?today:U.range),A=stats(view(false,'run'),today),m=mind(T),nd=s.dk.length;
   const pct=(a,b)=>b?Math.round(a/b*100)+'%':'—',K=byKind(T);
   // the cards that set a filter leave it out: Mood shift the mood, Time of day the bucket, the practice cards the practice
   const MS=view(true,'stat').filter(e=>e.d!=null),mu=MS.filter(e=>e.d>0).length,mw=MS.filter(e=>e.d<0).length,mn=MS.length,me=mn-mu-mw;
@@ -615,7 +630,7 @@ function entryForm(t){
    <label>Practice<select name="kind">${Object.entries(KIND).map(([k,v])=>`<option value="${k}"${k===d.kind?' selected':''}>${v}</option>`).join('')}</select></label>
    <label>Technique<input name="tech" list="tch" autocomplete="off" value="${esc(d.tech)}"></label>
    <label>When<input name="when" type="datetime-local" required value="${dtl(d.at).slice(0,16)}"></label>
-   <label>Minutes<input name="mins" type="number" min="0" step="any" required value="${d.mins}"></label>
+   <label>Minutes<input name="mins" inputmode="decimal" autocomplete="off" required value="${d.mins}"></label>
    ${rate('pre','State before',d.pre)}${rate('post','State after',d.post)}
    ${rate('depth','Depth',d.depth)}<button type="button" id="tm">START TIMER</button>
   </div>
@@ -623,7 +638,8 @@ function entryForm(t){
   <datalist id="tch"></datalist>
   <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
   const f=$('#tf'),e=f.elements,tb=$('#tm'),nv=x=>x.value===''?null:+x.value;
-  const read=()=>({kind:e.kind.value,tech:e.tech.value.trim(),at:new Date(e.when.value).getTime(),mins:+e.mins.value||0,pre:nv(e.pre),post:nv(e.post),depth:nv(e.depth),note:e.note.value.trim()});
+  // minutes as text, read like the CSV import (12.5, 12,5 or 12:30): a number field drops a decimal comma, so 7,5 saved as 75
+  const read=()=>({kind:e.kind.value,tech:e.tech.value.trim(),at:new Date(e.when.value).getTime(),mins:pm(e.mins.value),pre:nv(e.pre),post:nv(e.post),depth:nv(e.depth),note:e.note.value.trim()});
   const sync=()=>{
     techs(e.kind.value);
     const v=read();$('#pv').innerHTML=v.pre!=null&&v.post!=null?`SHIFT <b class="${cls(v.post-v.pre)}">${sg(v.post-v.pre,1)}</b>`:'';
@@ -632,7 +648,7 @@ function entryForm(t){
   let t0=0,iv=0;
   tb.onclick=()=>{
     if(iv){clearInterval(iv);iv=0;tb.textContent='START TIMER';return}
-    t0=Date.now()-(+e.mins.value||0)*60000;
+    t0=Date.now()-pm(e.mins.value)*60000;
     iv=setInterval(()=>{const m=(Date.now()-t0)/60000;e.mins.value=+m.toFixed(1);tb.textContent='STOP '+fm(m)},500);
     tb.textContent='STOP '+fm((Date.now()-t0)/60000);
   };
@@ -640,7 +656,7 @@ function entryForm(t){
   f.addEventListener('input',sync);sync();
   f.addEventListener('submit',ev=>{
     ev.preventDefault();const v=read();
-    if(!isFinite(v.at)||!(v.mins>0)){$('#pv').innerHTML='<b class="neg">Minutes must be above zero</b>';return}
+    if(!isFinite(v.at)||!(v.mins>0&&v.mins<=1440)){$('#pv').innerHTML='<b class="neg">Minutes must be above zero and at most 1440</b>';return}
     if(t)Object.assign(S.log.find(x=>x.id===t.id),v);else S.log.push({id:uid(),...v});
     save();dlg.close();setMonth(v.at);render();
   });
@@ -689,8 +705,9 @@ const mode=k=>k==='B'?'breath':k==='S'||k==='V'?'guide':k==='J'?'write':'sit';
 const steps=()=>STEPS[R.tech]||STEPS[R.kind]||[];
 let R=null,RI=0,RA=0,WL=null,AC=null;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
-// a run saved by the earlier timer lacks the newer fields
-if(R)R={pi:-1,lb:0,st:false,note:'',bells:0,intent:'',...R};
+// a run saved by the earlier timer lacks the newer fields; one with no practice or start (corrupted) is dropped, or
+// it would throw here on every start and leave START reopening it
+R=R&&KIND.hasOwnProperty(R.kind)&&Number.isFinite(R.t0)&&Number.isFinite(R.start)?{pi:-1,lb:0,st:false,note:'',bells:0,intent:'',...R}:null;
 const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
 const elapsed=()=>(R.paused??Date.now())-R.t0;
 const pref=()=>{try{return JSON.parse(localStorage.getItem(RUN+'.pref'))||{}}catch(e){return {}}};
@@ -776,7 +793,7 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   <span class="k">Practice</span><div class="vl" id="kd">${Object.entries(KIND).map(([k,v])=>`<button type="button" data-k="${k}">${v}<em>${KDESC[k]}</em></button>`).join('')}</div>
   <span class="k">Technique</span><div class="vl" id="td"></div>
   <span class="k">Minutes</span>
-  <div class="chips">${CHIPS.map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" type="number" min="0" step="any" placeholder="open" aria-label="Minutes" value="${SG[0].mins}"></div>
+  <div class="chips">${CHIPS.map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" inputmode="decimal" autocomplete="off" placeholder="open" aria-label="Minutes" value="${SG[0].mins}"></div>
   <div class="fgrid">
    <label>Interval bell<select name="bells">${[[0,'Off'],[1,'Every minute'],[2,'Every 2 min'],[5,'Every 5 min'],[10,'Every 10 min']].map(([v,l])=>`<option value="${v}"${v===(P.bells??0)?' selected':''}>${l}</option>`).join('')}</select></label>
    <label>Intention (optional)<input name="intent" autocomplete="off" placeholder="Patience. Stay with the breath."></label>
@@ -790,7 +807,7 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   const paint=()=>{
     f.querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on',b.dataset.k===kind));
     $('#td').innerHTML=TECH[kind].map(t=>`<button type="button" data-t="${esc(t)}"${t===tech?' class="on"':''}>${esc(t)}</button>`).join('');
-    f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(+e.mins.value||'')));
+    f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(pm(e.mins.value)||'')));
     const m=mode(kind);$('#o-settle').hidden=m!=='sit';$('#o-voice').hidden=m!=='guide';$('#md').textContent=DESC[m];
     $('#sg').classList.toggle('off',kind!==SG[si].kind||tech!==SG[si].tech);
   };
@@ -804,9 +821,9 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   f.addEventListener('input',paint);use(0);
   f.addEventListener('submit',ev=>{
     ev.preventDefault();const now=Date.now(),m=mode(kind);
-    const p={mins:e.mins.value===''?'':+e.mins.value,bells:+e.bells.value,settle:e.settle.checked,voice:e.voice.checked};
+    const p={mins:e.mins.value===''?'':pm(e.mins.value),bells:+e.bells.value,settle:e.settle.checked,voice:e.voice.checked};
     try{localStorage.setItem(RUN+'.pref',JSON.stringify(p))}catch(x){}
-    R={kind,tech,target:Math.max(0,+e.mins.value||0),pre:rval('pre'),intent:e.intent.value.trim(),bells:p.bells,
+    R={kind,tech,target:Math.max(0,pm(e.mins.value)),pre:rval('pre'),intent:e.intent.value.trim(),bells:p.bells,
       settle:m==='sit'&&p.settle,voice:m==='guide'&&p.voice,start:now,t0:now,paused:null,done:null,pi:-1,lb:0,st:false,
       note:m==='write'?(STEPS[tech]||STEPS[kind]).join('\n\n\n')+'\n\n':''};
     bell(3);if(R.voice)say(' ');keepRun();runView();
@@ -915,10 +932,11 @@ function importCSV(txt){
   const H=rows[0].map(h=>h.trim().toLowerCase()),c={};
   for(const k in ALIAS)c[k]=H.findIndex(h=>ALIAS[k].includes(h));
   if(c.at<0)return toast('Missing column: date');
-  const key=t=>[t.at,t.kind,r2(t.mins),t.pre,t.post].join('|'),seen=new Set(S.log.map(key));
+  // to the second, as the CSV export writes times: a timed session (ms) would otherwise come back as a duplicate
+  const key=t=>[Math.floor(t.at/1000),t.kind,r2(t.mins),t.pre,t.post].join('|'),seen=new Set(S.log.map(key));
   let add=0,skip=0,last=0;
   rows.slice(1).forEach(r=>{
-    const g=k=>c[k]<0?'':(r[c[k]]||'').trim(),rt=k=>{const v=parseFloat(g(k));return isFinite(v)?v:null};
+    const g=k=>c[k]<0?'':(r[c[k]]||'').trim(),rt=k=>{const v=parseFloat(g(k).replace(',','.'));return isFinite(v)?v:null};
     const t={id:uid(),at:ts(g('at')),kind:kindOf(g('kind')),tech:g('tech'),mins:pm(g('mins')),pre:rt('pre'),post:rt('post'),depth:rt('depth'),note:g('note')};
     if(!isFinite(t.at)||!(t.mins>0)||seen.has(key(t))){skip++;return}
     seen.add(key(t));S.log.push(t);add++;last=Math.max(last,t.at);
@@ -1081,7 +1099,7 @@ const ACT={
   pp:()=>{U.page--;render()},pn:()=>{U.page++;render()}
 };
 function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFullYear(),m:d.getMonth()};render()}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a])ACT[b.dataset.a](b.dataset.v)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&ACT[b.dataset.a]){if(!dlg.open)opener=b;ACT[b.dataset.a](b.dataset.v)}});
 // rows that act as buttons (cross-filters) answer Enter and Space too, and keep focus after the redraw
 document.addEventListener('keydown',e=>{const b=e.target.closest('[role=button][data-a]');if(!b||(e.key!=='Enter'&&e.key!==' '))return;e.preventDefault();
   const sel=`[data-a="${b.dataset.a}"][data-v="${CSS.escape(b.dataset.v||'')}"]`,i=[...document.querySelectorAll(sel)].indexOf(b);b.click();document.querySelectorAll(sel)[i]?.focus()});
@@ -1091,9 +1109,10 @@ $('#file').addEventListener('change',async e=>{
   const txt=await f.text();
   if(!/\.json$/i.test(f.name))return importCSV(txt);
   try{
-    const s=JSON.parse(txt);if(!Array.isArray(s.log))throw 0;
-    if(!confirm(`Replace everything here with this backup (${s.log.length} sessions)?`))return;
-    S={log:s.log,notes:s.notes||{},goal:s.goal||70};save();boot();toast('Backup restored');
+    // another app's backup (or one with no readable session) is refused before it can replace anything
+    const s=JSON.parse(txt);if(!Array.isArray(s?.log))throw 0;const N=norm(s),bad=s.log.length-N.log.length;if(bad&&!N.log.length)throw 0;
+    if(!confirm(`Replace everything here with this backup (${N.log.length} sessions${bad?`, ${bad} unreadable left out`:''})?`))return;
+    S=N;save();boot();toast('Backup restored');
   }catch(x){toast('Not a valid backup file')}
 });
 
@@ -1103,11 +1122,15 @@ UI.planner('mind',[KEY],plan);
 if(R)R.done==null?runView():wrapForm();
 // a session logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
 addEventListener('storage',e=>{if(e.key===KEY){S=load();render();UI.replan()}});
+// open (or back from the background) past midnight: Today, the streak and the week move on to the new day
+{const nd=()=>{if(!document.hidden&&RD!==ymd(new Date()))render()};document.addEventListener('visibilitychange',nd);setInterval(nd,6e4)}
 // another ISIONXXX app can send you straight to an action here (REWIRE's LOG buttons): #do=<action> or a message
 // 'today' (from TODAY's rings and timeline): drop any card filters and show just today, as a chip you can clear
 // 'plan' (TODAY's plan card): START with the card's unfiltered pick, whatever practice filter is set here
 function doAct(a){if(!/^\w+$/.test(a||''))return;if(a==='today'){U.x={};U.range=ymd(new Date());setMonth(Date.now());U.page=0;render();return}
-  if(a==='plan')return R?ACT.go():startForm(null);const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
+  // a session in progress (or waiting to be saved) comes back to the front: another screen in its place left its timer
+  // writing to a clock that's gone
+  if(a==='plan'||R)return R?ACT.go():startForm(null);const b=document.querySelector(`[data-a="${a}"],[data-act="${a}"]`);if(b)b.click()}
 addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.isx==='do')doAct(e.data.act)});
 {const m=/do=(\w+)/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>doAct(m[1]),0)}}
 /* ---------- today at a glance (shared hero, timeline and motion from ui.js) ---------- */
