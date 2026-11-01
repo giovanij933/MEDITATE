@@ -871,7 +871,7 @@ function runView(){
     $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
   };
   $('#rf').onclick=()=>endRun(false);
-  $('#rd').onclick=()=>{if(elapsed()<60000||confirm('Discard this session?')){clearRun();dlg.close()}};
+  $('#rd').onclick=async()=>{if(elapsed()<60000||await UI.confirm({title:'Discard this session?',body:'The time so far is not logged.',ok:'Discard',cancel:'Keep going',danger:true})){clearRun();dlg.close()}};
   clearInterval(RI);RI=setInterval(tick,250);tick();
   sheet();if(!dlg.open)dlg.showModal();
   wake(true);
@@ -897,7 +897,7 @@ function wrapForm(){
   const f=$('#wf');
   const sync=()=>{const a=rval('pre'),b=rval('post');$('#pv').innerHTML=a!=null&&b!=null?`SHIFT <b class="${cls(b-a)}">${sg(b-a,1)}</b>`:''};
   f.addEventListener('input',sync);sync();
-  $('#wd').onclick=()=>{if(confirm('Discard this session without logging it?')){clearRun();dlg.close()}};
+  $('#wd').onclick=async()=>{if(await UI.confirm({title:'Discard this session?',body:'It ends without being logged.',ok:'Discard',cancel:'Keep it',danger:true})){clearRun();dlg.close()}};
   f.addEventListener('submit',ev=>{
     ev.preventDefault();
     const t={id:uid(),kind:R.kind,tech:R.tech,at:R.start,mins:R.done,pre:rval('pre'),post:rval('post'),depth:rval('depth'),note:f.elements.note.value.trim()};
@@ -1086,7 +1086,8 @@ const ACT={
   review:()=>reviewForm(rvDefault()),rvgo:v=>v&&reviewForm(v),rvnote:v=>{dlg.classList.remove('rvd');noteForm(v)},
   rvcopy:()=>{const t=reviewText();(navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Review copied'),()=>toast('Copy failed — select the text instead'))},
   bak:()=>dl(`mind-backup-${ymd(new Date())}.json`,JSON.stringify(S),'application/json'),
-  clear:()=>{if(confirm('Delete ALL sessions and notes on this device?')){S={log:[],notes:{},goal:S.goal||70};save();U.range='all';boot()}},
+  clear:()=>UI.confirm({title:'Delete everything?',body:'All sessions and notes on this device are deleted. Back up first if you might want them.',ok:'Delete all',danger:true})
+    .then(ok=>{if(ok){S={log:[],notes:{},goal:S.goal||70};save();U.range='all';boot()}}),
   prev:()=>shift(-1),next:()=>shift(1),tod:()=>{setMonth(Date.now());render()},
   day:v=>{U.range=U.range===v?'all':v;U.page=0;render()},
   rng:v=>{U.range=U.range===v?'all':v;U.page=0;render()},   // the Today card's period tiles; tap again for all time
@@ -1095,7 +1096,9 @@ const ACT={
   xclr:k=>{if(k==='kind'||k==='stat'||k==='range')U[k]='all';else delete U.x[k];U.page=0;render()},
   xall:()=>{U.kind='all';U.stat='all';U.x={};if(/^\d{4}-/.test(U.range))U.range='all';U.page=0;render()},
   edit:v=>entryForm(S.log.find(t=>t.id===v)),
-  del:v=>{if(confirm('Delete this session?')){S.log=S.log.filter(t=>t.id!==v);save();render()}},
+  // a delete happens at once and can be taken back from the toast (the session goes back where it was)
+  del:v=>{const i=S.log.findIndex(t=>t.id===v);if(i<0)return;const[t]=S.log.splice(i,1);save();render();
+    UI.undo('Session deleted',()=>{S.log.splice(Math.min(i,S.log.length),0,t);save();render()})},
   pp:()=>{U.page--;render()},pn:()=>{U.page++;render()}
 };
 function shift(k){const d=new Date(U.month.y,U.month.m+k,1);U.month={y:d.getFullYear(),m:d.getMonth()};render()}
@@ -1111,7 +1114,7 @@ $('#file').addEventListener('change',async e=>{
   try{
     // another app's backup (or one with no readable session) is refused before it can replace anything
     const s=JSON.parse(txt);if(!Array.isArray(s?.log))throw 0;const N=norm(s),bad=s.log.length-N.log.length;if(bad&&!N.log.length)throw 0;
-    if(!confirm(`Replace everything here with this backup (${N.log.length} sessions${bad?`, ${bad} unreadable left out`:''})?`))return;
+    if(!await UI.confirm({title:'Restore this backup?',body:`Everything here is replaced with the backup's ${N.log.length} sessions${bad?` (${bad} unreadable, left out)`:''}.`,ok:'Replace',danger:true}))return;
     S=N;save();boot();toast('Backup restored');
   }catch(x){toast('Not a valid backup file')}
 });
