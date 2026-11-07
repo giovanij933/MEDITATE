@@ -571,7 +571,7 @@ function render(){
   const top=KK.slice().sort((a,b)=>b.m-a.m)[0],eff=KK.filter(g=>g.c>=2&&g.avg!=null).sort((a,b)=>b.avg-a.avg)[0],mx=Math.max(1,...TB.map(t=>t.m)),km=Math.max(1,...KK.map(g=>g.m));
 
   $('#top').innerHTML=heroToday();
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample month to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Streak</p><div class="k">Days in a row</div><div class="big ${A.dsCur?'pos':''}">${A.dsCur} day${A.dsCur===1?'':'s'}</div>
   ${gauge([[m.wkDays/7,'sg',wkF,`This week: ${m.wkDays} of 7 days practiced — click to show this week`]],`${m.wkDays}/7`)}
@@ -952,29 +952,71 @@ function exportCSV(){
   dl(`mind-${ymd(new Date())}.csv`,rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
 }
 function sample(){
-  // three weeks of practice: days ago, hour, minute, practice, technique, minutes, before, after, depth, note
-  const n=new Date(),_=null;
-  [[22,6,10,'B','Box 4-4-4-4',8,5,6.5,6,''],[22,21,30,'J','Evening review',10,5,6,_,'Rushed the morning. Slower start tomorrow.'],
-   [21,6,15,'M','Breath counting',10,5,6,5,''],[20,6,10,'S','NSDR',15,4,6.5,7,'Slept badly; this reset it.'],
-   [19,6,20,'B','Box 4-4-4-4',8,6,6.5,6,''],[19,8,50,'V','Session rehearsal',6,6,7,7,''],
-   [18,6,10,'M','Breath counting',12,5,4.5,3,'Restless. Kept planning the day.'],
-   [16,7,0,'F','Single-point',10,5,6,6,''],[15,6,10,'B','Resonance 5.5',10,4.5,7,7,''],
-   [15,21,40,'J','Evening review',12,_,_,_,'Wrote without rating. Three things that went right.'],
-   [14,6,10,'M','Open awareness',15,6,7,7,''],[13,6,15,'S','Progressive relaxation',20,5,7.5,8,''],
-   [12,6,10,'V','Session rehearsal',8,6,6,5,'Flat. Mind kept wandering off the script.'],[12,21,20,'J','Evening review',10,4,5.5,_,''],
-   [11,6,10,'B','Box 4-4-4-4',8,5.5,7,7,''],[9,6,30,'M','Breath counting',15,5,6.5,6,''],
-   [8,6,10,'F','Single-point',12,6,5.5,4,'Forced it. Shorter next time.'],[8,12,30,'B','Physiological sigh',3,3.5,6,6,'Midday reset.'],
-   [7,6,10,'S','NSDR',20,5,7.5,8,''],[6,6,10,'M','Open awareness',20,6,7.5,8,''],
-   [5,6,15,'V','Session rehearsal',8,6.5,7.5,7,''],[5,21,30,'J','Evening review',15,5,6.5,_,''],
-   [4,6,10,'B','Resonance 5.5',12,5,7.5,8,''],[3,6,10,'M','Breath counting',20,6,6,5,''],
-   [2,6,10,'S','NSDR',15,4.5,7,7,''],[1,6,10,'F','Single-point',15,6,7,7,''],[1,8,45,'V','Session rehearsal',6,7,7.5,7,''],
-   [0,6,15,'B','Box 4-4-4-4',10,5,7,7,''],[0,8,40,'V','Session rehearsal',6,6.5,7.5,7,'']]
-  .forEach(([ago,h,mi,kind,tech,mins,pre,post,depth,note])=>{
-    // the sample runs up to today: a session that hasn't happened yet today moves to just before now (or is left out
-    // before the day has room for it)
-    let at=new Date(n.getFullYear(),n.getMonth(),n.getDate()-ago,h,mi).getTime();const lim=n-(mins+5)*6e4;
-    if(at>lim){if(new Date(lim).getDate()!==n.getDate()||S.log.some(e=>e.at>=lim-(mins+5)*6e4))return;at=lim}
-    S.log.push({id:uid(),at,kind,tech,mins,pre,post,depth,note})});
+  /* A year of practice, from a first week of 5-minute sits to a settled habit: a morning session most days (5 min at
+     first, about 20 by summer, a long one some weekends), a short rehearsal before the market opens on trading days,
+     evening journaling a few nights a week and a midday breathing reset on hard days. A stressful spring (moods start
+     lower, more breathwork, nine days skipped) and a couple of sick days; holidays and the summer week off move the
+     morning sit later and drop the rehearsal. Moods (1-10) lift more after the deeper sessions and sometimes not at all;
+     depth grows with practice. Fixed seed: the same sample every time, only the dates move with today. */
+  let s=20260105;const rnd=()=>((s=Math.imul(s^s>>>15,2246822507)^Math.imul(s^s>>>13,3266489909),(s^=s>>>16)>>>0)/4294967296);
+  const pick=a=>a[Math.floor(rnd()*a.length)],gs=()=>Math.sqrt(-2*Math.log(1-rnd()))*Math.cos(2*Math.PI*rnd()),half=v=>Math.round(v*2)/2,cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+  // the trading days JOURNAL's sample keeps: weekdays without US market holidays, Christmas week or the first full week of August
+  const hol=d=>{
+    const y=d.getFullYear(),m=d.getMonth(),dd=d.getDate(),nth=(mo,w,n)=>1+(w-new Date(y,mo,1).getDay()+7)%7+7*(n-1);
+    const obs=(mo,day)=>{const x=new Date(y,mo,day),w=x.getDay();x.setDate(day+(w===6?-1:w===0?1:0));return x.getMonth()===m&&x.getDate()===dd};
+    const a=y%19,b=Math.floor(y/100),c=y%100,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-Math.floor(b/4)-g+15)%30;
+    const l=(32+2*(b%4)+2*Math.floor(c/4)-h-c%4)%7,q=Math.floor((a+11*h+22*l)/451),gf=new Date(y,Math.floor((h+l-7*q+114)/31)-1,(h+l-7*q+114)%31-1);
+    const mem=new Date(y,5,0);mem.setDate(mem.getDate()-(mem.getDay()+6)%7);
+    return (m===0&&(dd===1||dd===2&&d.getDay()===1))||(m===0&&dd===nth(0,1,3))||(m===1&&dd===nth(1,1,3))||(m===gf.getMonth()&&dd===gf.getDate())
+      ||(m===4&&dd===mem.getDate())||obs(5,19)||obs(6,4)||(m===8&&dd===nth(8,1,1))||(m===10&&dd===nth(10,4,4))||obs(11,25);
+  };
+  const off=d=>{const m=d.getMonth(),dd=d.getDate(),am=1+(8-new Date(d.getFullYear(),7,1).getDay())%7;return (m===11&&dd>=24)||(m===0&&dd<=2)||(m===7&&dd>=am-2&&dd<am+7)};
+  // how much each practice lifts the mood at depth 7, and its usual length next to the morning sit
+  const LIFT={M:1,B:1.2,S:1.6,V:.7,F:.8,J:.6};
+  const NOTE={good:{M:['Settled quickly today.','Noticed the gap between thoughts.','Counted to ten three times without losing it.'],B:['Shoulders dropped by the third round.','Heart rate came right down.'],
+      S:['Woke up rested after this.','Fell asleep near the end. Body needed it.'],V:['Walked through the open twice. Felt ready.','Saw myself taking the stop calmly.'],F:['Stayed on the point longer than last week.'],
+      J:['Three things went right today.','Wrote it out and let it go.','Good day. Wrote down why.']},
+    flat:{M:['Busy mind. Kept planning the day.','Restless. Sat through it anyway.'],B:['Hard to slow the exhale today.'],S:['Couldn\'t settle, too much on my mind.'],
+      V:['Flat. Mind kept wandering off the script.'],F:['Forced it. Shorter next time.'],J:['Rushed it. Too tired to think.']}};
+  const DAY={open:['Noticed I breathe shallow when the market opens. Sigh first.','Calmer at the open than I used to be.'],long:['Longer sit felt easy today. Keep it.','Twenty minutes went by fast.'],
+    any:['Busy day. A short sit still counts.','Same time, same chair. It\'s getting automatic.']};
+  const t0=new Date();t0.setHours(0,0,0,0);const now=Date.now(),add=(d,h,mi,kind,tech,mins,lv,ex={})=>{
+    const at=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,mi).getTime();if(at+mins*6e4>now)return null;
+    // the mood before: lower in the stressful spring and on Mondays; the lift grows with depth and the practice
+    const depth=kind==='J'?null:cl(Math.round(lv.depth+(kind==='S'?1:0)+gs()*1.1),1,10),pre=cl(half(lv.mood+(d.getDay()===1?-.4:0)+gs()*.8),2,8.5);
+    const lift=LIFT[kind]*((depth??6)/7)+gs()*.6,rated=rnd()>.05,post=cl(half(pre+lift),1,10),up=post-pre>=.5;
+    const note=rnd()<.13?pick((up?NOTE.good:NOTE.flat)[kind]):'';
+    const e={id:uid(),at,kind,tech,mins,pre:rated?pre:null,post:rated?post:null,depth:rated?depth:null,note,...ex};S.log.push(e);return e};
+  let lapse=0,sick=0,gap=0;
+  for(let k=364;k>=0;k--){
+    const d=new Date(t0);d.setDate(d.getDate()-k);const w=(364-k)/7,wd=d.getDay(),we=wd===0||wd===6,away=off(d),trade=!we&&!away&&!hol(d);
+    // the spring (weeks 15-23, the same stretch as JOURNAL's drawdown): a lower mood and a nine-day gap in week 19
+    const spring=w>=15&&w<23;if(Math.floor(w)===19&&wd===1)lapse=9;if(lapse>0){lapse--;gap++;continue}
+    if(sick>0){sick--;gap++;continue}if(rnd()<.006){sick=1+Math.floor(rnd()*2);gap++;continue}
+    const lv={mood:5.4+Math.min(w,30)*.02-(spring?.9:0),depth:3.8+3.2*(1-Math.exp(-w/16))};
+    // the morning sit: shows up more often and lasts longer as the habit sets in
+    const show=w<4?.62:w<12?.78:spring?.7:.9,len=6+14*(1-Math.exp(-w/12));
+    let am=null;if(rnd()<show){
+      const kinds=w<6?['M','M','B']:['M','M','M','B','S','F'],kind=we&&w>10&&rnd()<.35?'S':pick(kinds);
+      const long=we&&w>12&&rnd()<.3,mins=kind==='S'?(long?30:20):long?25+5*Math.floor(rnd()*2):cl(Math.round((len+gs()*2.5)/5)*5||5,5,30);
+      am=add(d,we||away?7+Math.floor(rnd()*2):6,(we||away?15:0)+Math.floor(rnd()*35),kind,pick(TECH[kind].slice(0,kind==='M'&&w<8?1:3)),mins,lv);
+    }
+    // rehearsal before the open, once it's a habit (week 8 on)
+    if(trade&&w>=8&&rnd()<(spring?.85:.7))add(d,8,38+Math.floor(rnd()*14),'V',w<20||rnd()<.7?'Session rehearsal':'Process',5+Math.floor(rnd()*4),lv);
+    // a breathing reset at midday on hard days, more of them in the spring
+    if(trade&&rnd()<(spring?.3:.07))add(d,12,10+Math.floor(rnd()*40),'B',rnd()<.7?'Physiological sigh':'Box 4-4-4-4',3,{...lv,mood:lv.mood-.8});
+    // evening journaling a few nights a week
+    if(w>=3&&rnd()<(we?.25:.45))add(d,21,Math.floor(rnd()*50),'J',w<10?'Evening review':pick(['Evening review','Evening review','Gratitude','Free write']),10+5*Math.floor(rnd()*2),{...lv,mood:lv.mood+.3});
+    // a day note now and then; the first day back after a gap says so
+    const nk=ymd(d);if(gap>=3&&am)S.notes[nk]??=`Back after ${gap} days off. Coming back matters more than the streak.`;
+    else if(am&&rnd()<.06)S.notes[nk]??=pick(trade&&w>20&&rnd()<.5?DAY.open:am.mins>=20?DAY.long:DAY.any);
+    if(am)gap=0;else gap++;
+  }
+  // very early in the morning nothing has happened yet today: a short sit just before now
+  if(!S.log.some(e=>e.at>=t0.getTime())&&now-12*6e4>=t0.getTime())S.log.push({id:uid(),at:now-12*6e4,kind:'M',tech:'Breath counting',mins:10,pre:5.5,post:6.5,depth:6,note:''});
+  // a year in, the sits come to about three hours a week: if the weekly goal is still the untouched 70-minute default,
+  // set one that fits, so the goal card isn't always full. A goal you've set yourself is left alone
+  if(S.goal===70)S.goal=140;
   save();boot();
 }
 
