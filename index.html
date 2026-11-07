@@ -275,7 +275,7 @@ h1.brand{margin:0}
 <script type="isx/app">
 'use strict';
 const KEY='isx.mind.v1', RUN='isx.mind.run', PAGE=20;
-const RANGES={today:'Today',week:'This week',month:'This month',all:'All time'};
+const RANGES={today:'Today',week:'This week',month:'This month',year:'This year',all:'All time'};
 const KIND={M:'Meditation',B:'Breathwork',S:'Body Scan',V:'Visualization',F:'Focus',J:'Journaling'};
 const KDESC={M:'Sit with the breath',B:'Paced breathing',S:'Relax part by part',V:'Rehearse it first',F:'One point, steady',J:'Write it out'};
 const TECH={
@@ -361,7 +361,7 @@ let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on
 const mood=d=>d==null?null:d>0?'up':d<0?'down':'same';
 function view(useRange=true,skip=''){
   const today=ymd(new Date()),wk=s=>{const d=pd(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d)};
-  const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?wk(d)===wk(today):U.range==='month'?d.slice(0,7)===today.slice(0,7):d===U.range);
+  const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?wk(d)===wk(today):U.range==='month'?d.slice(0,7)===today.slice(0,7):U.range==='year'?d.slice(0,4)===today.slice(0,4):d===U.range);
   const x=U.x,sk=skip.split(','),on=k=>!sk.includes(k)&&x[k]!=null;
   let T=S.log.map(e=>({...e,day:ymd(new Date(e.at)),d:e.pre!=null&&e.post!=null?r2(e.post-e.pre):null}))
     .filter(e=>(sk.includes('kind')||U.kind==='all'||e.kind===U.kind)&&(sk.includes('stat')||U.stat==='all'||mood(e.d)===U.stat)&&(!useRange||inR(e.day))
