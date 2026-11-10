@@ -359,11 +359,15 @@ let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on
 // shift = state after - state before. Sessions without both ratings still count for time and streaks.
 // skip leaves filters out (comma-separated): a card that sets a filter shows everything else, with its own choice highlighted
 const mood=d=>d==null?null:d>0?'up':d<0?'down':'same';
+// the day a session falls on, worked out once per time stamp (view runs many times per redraw, over every session)
+const DAYOF=new Map(),dayOf=at=>{let d=DAYOF.get(at);if(d===undefined){d=ymd(new Date(at));DAYOF.set(at,d)}return d};
 function view(useRange=true,skip=''){
   const today=ymd(new Date()),wk=s=>{const d=pd(s);d.setDate(d.getDate()-(d.getDay()+6)%7);return ymd(d)};
-  const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?wk(d)===wk(today):U.range==='month'?d.slice(0,7)===today.slice(0,7):U.range==='year'?d.slice(0,4)===today.slice(0,4):d===U.range);
+  // this week's first and last day, worked out once (asking for each entry's week, and today's again, for every entry was slow)
+  const w0=wk(today),w1=(()=>{const d=pd(w0);d.setDate(d.getDate()+6);return ymd(d)})();
+  const inR=d=>U.range==='all'||(U.range==='today'?d===today:U.range==='week'?d>=w0&&d<=w1:U.range==='month'?d.slice(0,7)===today.slice(0,7):U.range==='year'?d.slice(0,4)===today.slice(0,4):d===U.range);
   const x=U.x,sk=skip.split(','),on=k=>!sk.includes(k)&&x[k]!=null;
-  let T=S.log.map(e=>({...e,day:ymd(new Date(e.at)),d:e.pre!=null&&e.post!=null?r2(e.post-e.pre):null}))
+  let T=S.log.map(e=>({...e,day:dayOf(e.at),d:e.pre!=null&&e.post!=null?r2(e.post-e.pre):null}))
     .filter(e=>(sk.includes('kind')||U.kind==='all'||e.kind===U.kind)&&(sk.includes('stat')||U.stat==='all'||mood(e.d)===U.stat)&&(!useRange||inR(e.day))
       &&(!on('tod')||tod(e.at)===x.tod)&&(!on('wk')||wkStart(e.at)===x.wk));
   // a streak: the days of the current or the best run, found over every day the other filters leave (any range)
@@ -571,8 +575,8 @@ function render(){
   $('#scope').textContent=`Statistics for ${U.kind==='all'?'All Practices':KIND[U.kind]} — ${RANGES[U.range]||dlabel(U.range)}`+(nd?` · ${dlabel(s.dk[0])} → ${dlabel(s.dk[nd-1])}`:'');
   const top=KK.slice().sort((a,b)=>b.m-a.m)[0],eff=KK.filter(g=>g.c>=2&&g.avg!=null).sort((a,b)=>b.avg-a.avg)[0],mx=Math.max(1,...TB.map(t=>t.m)),km=Math.max(1,...KK.map(g=>g.m));
 
-  $('#top').innerHTML=heroToday();
-  $('#app').innerHTML=`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  UI.paint($('#top'),heroToday(),{now:true});
+  UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Streak</p><div class="k">Days in a row</div><div class="big ${A.dsCur?'pos':''}">${A.dsCur} day${A.dsCur===1?'':'s'}</div>
   ${gauge([[m.wkDays/7,'sg',wkF,`This week: ${m.wkDays} of 7 days practiced — click to show this week`]],`${m.wkDays}/7`)}
@@ -619,7 +623,7 @@ function render(){
 </section>
 ${kinds(view(true,'kind'))}
 ${table(T)}
-<footer><p>Mood is your own 1–10 rating before and after: 1 = scattered or tense, 10 = calm and clear. Shift = after − before. Depth = how settled the session itself was.</p></footer>`;
+<footer><p>Mood is your own 1–10 rating before and after: 1 = scattered or tense, 10 = calm and clear. Shift = after − before. Depth = how settled the session itself was.</p></footer>`);
 }
 
 /* ---------- dialogs ---------- */
