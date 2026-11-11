@@ -429,7 +429,7 @@ function gauge(segs,label){
 // long ranges: average runs of k neighbours so every bar or point stays readable on a phone (the newest run ends
 // on the latest value). Returns the values and k, so the chart can say what one bar stands for.
 function bucket(v,max){const n=v.length;if(n<=max)return{v,k:1,r:v.map((_,i)=>[i,i+1])};const k=Math.ceil(n/max),o=[],r=[];for(let e=n;e>0;e-=k){const a=Math.max(0,e-k),s=v.slice(a,e);o.unshift(s.reduce((a,x)=>a+(+x||0),0)/s.length);r.unshift([a,e])}return{v:o,k,r}}
-const cap=(k,what='days')=>k>1?`<div class="cap">Each bar averages ${k} ${what}</div>`:'';
+const cap=(k,what='days',mark='bar')=>k>1?`<div class="cap">Each ${mark} averages ${k} ${what}</div>`:'';
 function line(vals,c){
   vals=bucket(vals,120).v;
   const w=600,h=160,p=6,n=vals.length;if(n<2)return ND;
@@ -542,10 +542,14 @@ function mind(T,all=view(false,'wk')){
 // before (dashed) and after (green) on the same 1–10 scale
 // at(i0,i1) gives each day a full-height column to click (that day) or hover (its before and after)
 function moodChart(pre,post,at){
+  // a point a day for a year is a scribble: long ranges average runs of days, as the bar charts do, and the caption says so
+  const B=bucket(pre,60);pre=B.v;post=bucket(post,60).v;
   const w=600,h=160,p=8,n=pre.length;if(n<2)return ND;
-  const x=i=>(p+i*(w-2*p)/(n-1)).toFixed(1),y=v=>(p+(10-v)*(h-2*p)/9).toFixed(1),pl=a=>a.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
-  const cw=(w-2*p)/(n-1),hits=at?pre.map((_,i)=>`<path d="M${Math.max(0,x(i)-cw/2).toFixed(1)} 0h${cw.toFixed(1)}v${h}h-${cw.toFixed(1)}z"${hit(at(i,i+1))}`).join(''):'';
-  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline class="mb" points="${pl(pre)}"/><polyline class="ma" points="${pl(post)}"/>${hits}</svg>`;
+  // the scale fits what was rated (at least two points of it), so the two lines use the chart, not a band across its top
+  const all=[...pre,...post];let lo=Math.max(1,Math.min(...all)-.4),hi=Math.min(10,Math.max(...all)+.4);if(hi-lo<2){const m=(lo+hi)/2;lo=Math.max(1,m-1);hi=Math.min(10,lo+2);lo=hi-2}
+  const x=i=>(p+i*(w-2*p)/(n-1)).toFixed(1),y=v=>(p+(hi-v)*(h-2*p)/(hi-lo)).toFixed(1),pl=a=>a.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  const cw=(w-2*p)/(n-1),hits=at?pre.map((_,i)=>`<path d="M${Math.max(0,x(i)-cw/2).toFixed(1)} 0h${cw.toFixed(1)}v${h}h-${cw.toFixed(1)}z"${hit(at(...B.r[i]))}`).join(''):'';
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline class="mb" points="${pl(pre)}"/><polyline class="ma" points="${pl(post)}"/>${hits}</svg>`+cap(B.k,'days','point');
 }
 // with xf = 'key:value' the row filters (the bar clicks too) and the bar dims when another row is chosen
 const hbar=(label,val,f,c='bga',xf)=>`<div class="ev${xf?' pick'+(xon(xf)?' on':''):''}"${xf?xa(xf):''}><span>${label}</span><b>${val}</b></div><div class="hb${xf?' pick'+(xoff(xf)?' off':''):''}"${xf?` data-a="xf" data-v="${xf}"`:''}><i class="${c}" style="width:${(Math.min(1,f||0)*100).toFixed(1)}%"></i></div>`;
