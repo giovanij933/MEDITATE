@@ -733,7 +733,7 @@ try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
 // a run saved by the earlier timer lacks the newer fields; one with no practice or start (corrupted) is dropped, or
 // it would throw here on every start and leave START reopening it
 R=R&&KIND.hasOwnProperty(R.kind)&&Number.isFinite(R.t0)&&Number.isFinite(R.start)?{pi:-1,lb:0,st:false,note:'',bells:0,intent:'',...R}:null;
-const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}};
+const keepRun=()=>{try{localStorage.setItem(RUN,JSON.stringify(R))}catch(e){}window.UI?.replan?.()};
 const elapsed=()=>(R.paused??Date.now())-R.t0;
 const pref=()=>{try{return JSON.parse(localStorage.getItem(RUN+'.pref'))||{}}catch(e){return {}}};
 const rpick=(n,label,v)=>`<span class="k">${label}</span><div class="rate" data-n="${n}">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button type="button" data-r="${i}"${v===i?' class="on"':''}>${i}</button>`).join('')}</div>`;
@@ -774,7 +774,7 @@ function breath(ms){
   return {c:'',left:0,s};
 }
 const settling=()=>R.settle&&elapsed()<60000;
-function clearRun(){window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}try{speechSynthesis.cancel()}catch(e){}wake(false)}
+function clearRun(){window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}window.UI?.replan?.();try{speechSynthesis.cancel()}catch(e){}wake(false)}
 
 // START suggests a well-rounded practice: among the practices that suit the time of day, the one done least recently
 // (never done first), then its least recent technique, so over the days every practice and technique comes round.
@@ -803,6 +803,8 @@ const why=s=>!s.kat?`New for you: ${KIND[s.kind]} · ${s.tech} — suits the ${s
 // TODAY's plan card: START's first suggestion for each part of the day, and whether you practiced today already.
 // A name too long for the title moves the practice to the line below.
 function plan(){
+  // a session under way (or done and not saved yet) is TODAY's row, with its clock: START brings it back
+  if(R)return [{title:`${KIND[R.kind]} · ${R.tech}`,sub:R.done!=null?'Finished · not saved yet':'',act:'go',run:R.done!=null?{saved:false}:{t0:R.t0,mins:R.target||0,paused:!!R.paused},art:window.TQG?.art(R.tech,PACE[R.tech])||undefined}];
   const t=ymd(new Date()),done=S.log.some(e=>ymd(new Date(e.at))===t);
   // art: once you've practiced today, TODAY's row shows what you did, so the picture is of your last technique today
   const last=done&&S.log.filter(e=>ymd(new Date(e.at))===t&&window.TQG?.get(e.tech)).sort((a,b)=>b.at-a.at)[0],did=last&&TQG.art(last.tech,PACE[last.tech]);
@@ -830,7 +832,6 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   </div>
   <label class="ck" id="o-settle"><input type="checkbox" name="settle"${P.settle??true?' checked':''}> Settle in with a minute of slow breathing</label>
   <label class="ck" id="o-voice"><input type="checkbox" name="voice"${P.voice??true?' checked':''}> Read the prompts aloud</label>
-  ${rpick('pre','State before (optional)')}
   <div class="fa2"><span class="dim" id="md"></span><button type="button" class="ghost" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
   const f=$('#sf'),e=f.elements;
   const DESC={breath:'Breathe with the bubble',sit:'Quiet screen, soft light',guide:'Prompts with a soft bell',write:'Prompts and a writing pad'};
@@ -855,10 +856,10 @@ function startForm(only=U.kind!=='all'?U.kind:null){
     ev.preventDefault();const now=Date.now(),m=mode(kind);
     const p={mins:e.mins.value===''?'':pm(e.mins.value),bells:+e.bells.value,settle:e.settle.checked,voice:e.voice.checked};
     try{localStorage.setItem(RUN+'.pref',JSON.stringify(p))}catch(x){}
-    R={kind,tech,target:Math.max(0,pm(e.mins.value)),pre:rval('pre'),intent:e.intent.value.trim(),bells:p.bells,
-      settle:m==='sit'&&p.settle,voice:m==='guide'&&p.voice,start:now,t0:now,paused:null,done:null,pi:-1,lb:0,st:false,
+    const cfg={kind,tech,target:Math.max(0,pm(e.mins.value)),intent:e.intent.value.trim(),bells:p.bells,settle:m==='sit'&&p.settle,voice:m==='guide'&&p.voice};
+    moodStep(pre=>{const now=Date.now();R={...cfg,pre,start:now,t0:now,paused:null,done:null,pi:-1,lb:0,st:false,
       note:m==='write'?(STEPS[tech]||STEPS[kind]).join('\n\n\n')+'\n\n':''};
-    bell(3);if(R.voice)say(' ');keepRun();runView();
+      bell(3);if(R.voice)say(' ');keepRun();runView()});
   });
   sheet();dlg.showModal();f.querySelector('.pri').focus();
 }
@@ -870,6 +871,16 @@ function guide(t){
   <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">DONE</button></div>`;
   d.onclick=e=>{if(e.target===d||e.target.closest('[data-gx]'))d.close()};
   d.showModal();d.querySelector('[data-gx]').focus();
+}
+// how you feel before, asked as you press BEGIN: one tap starts the session with it, SKIP starts without. The end
+// asks how you feel after, so the shift is measured (the before can still be changed there)
+function moodStep(go){
+  dlg.innerHTML=`<div class="rv"><h3>BEFORE YOU BEGIN</h3><p class="gp">How do you feel right now?</p>
+  <div class="rate mdr">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button type="button" data-md="${i}">${i}</button>`).join('')}</div>
+  <p class="dim c">1 is drained, 10 is great. It's compared with how you feel after.</p>
+  <div class="fa2"><button type="button" id="mds">SKIP</button></div></div>`;
+  dlg.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>go(+b.dataset.md));$('#mds').onclick=()=>go(null);
+  dlg.querySelector('[data-md="5"]').focus();
 }
 function runView(){
   window.UI?.runBar?.(null);
@@ -1207,7 +1218,7 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
-UI.planner('mind',[KEY],plan);
+UI.planner('mind',[KEY,RUN],plan);
 if(R)R.done==null?runView():wrapForm();
 // a session logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
 addEventListener('storage',e=>{if(e.key===KEY){S=load();render();UI.replan()}});
