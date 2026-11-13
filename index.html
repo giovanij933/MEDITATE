@@ -223,6 +223,25 @@ dialog.ss .vl.multi button.on::before{content:'✓';box-shadow:none}
 dialog.ss .vl button:hover{color:var(--accent-text)}
 dialog.ss .vl em{margin-left:auto;font-style:normal;font-size:11px;color:var(--dim);text-align:right}
 dialog.ss .vl button.on em{color:var(--accent-text)}
+/* a technique's guide (techniques.js): its picture beside its name, and an ⓘ that opens the guide. Breathwork shows
+   one breath's shape; the rest, a body lit where attention rests (solid: the focus, light: around it) */
+.tq-fig{display:block;height:auto}.tq-fig polygon{fill:color-mix(in srgb,var(--text-muted) 22%,var(--track))}.tq-fig .tq-n{fill:var(--track)}
+.tq-fig .tq-p{fill:var(--accent)}.tq-fig .tq-s{fill:color-mix(in srgb,var(--accent) 40%,var(--track))}
+.tq-cv{display:block}.tq-cv .tq-a{fill:color-mix(in srgb,var(--accent) 16%,transparent)}.tq-cv .tq-l{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.tq-cv .tq-sep{stroke:var(--line2);stroke-dasharray:2 2}
+.tq-cv text{font-family:var(--f);text-anchor:middle;font-size:11px}.tq-cv .tq-cl{font-weight:600;letter-spacing:.04em;text-transform:uppercase;fill:var(--text-primary)}.tq-cv .tq-cn{fill:var(--text-secondary)}
+.tq-mini{flex:none;width:52px;display:inline-flex;align-items:center;justify-content:center}.tq-mini .tq-fig{width:auto;height:34px}
+dialog.ss .vl .tqr{display:flex;align-items:stretch;border-bottom:1px solid var(--line);transition:background-color .18s}
+dialog.ss .vl .tqr>button[data-t]{flex:1;min-width:0;border-bottom:0;padding-top:6px;padding-bottom:6px;min-height:46px}
+dialog.ss .vl .tqr:has(>button.on){background:var(--accent-soft)}dialog.ss .vl .tqr>button.on{background:none}
+dialog.ss .vl .tq-ib,.tq-open{all:unset;box-sizing:border-box;cursor:pointer;-webkit-tap-highlight-color:transparent}
+dialog.ss .vl .tq-ib{flex:none;width:44px;display:flex;align-items:center;justify-content:center}dialog.ss .vl .tq-ib::before{content:none}
+.tq-open{display:inline-flex;align-items:center;gap:8px;padding:12px 0;margin:-12px 0}
+dialog.ss .vl .tq-ib:focus-visible,.tq-open:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:50%}.tq-open:focus-visible{outline-offset:2px;border-radius:6px}
+.tq-i{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;color:var(--accent-text);font:600 11px/1 var(--f);text-transform:none;letter-spacing:0}
+.tq{margin:0 0 14px}.tq-pic{display:flex;justify-content:center;margin:4px 0 18px}.tq-pic .tq-fig{width:min(40%,96px)}.tq-pic .tq-cv{width:100%;max-width:340px;height:auto}
+.tq-l{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;line-height:1.45}
+.tq-l dt{padding-top:2px;color:var(--text-secondary);font-size:11px;letter-spacing:.05em;text-transform:uppercase}.tq-l dd{margin:0;color:var(--text-primary)}
 /* the suggested session on the start screen: why it was picked, and a shuffle to the next one */
 dialog.ss .sg{display:flex;align-items:center;gap:10px;margin:0 0 20px;padding:10px 12px;border:1px solid var(--accent-line);background:var(--accent-soft);transition:opacity .18s}
 dialog.ss .sg p{flex:1;font-size:12px;line-height:1.5}
@@ -262,11 +281,13 @@ h1.brand{margin:0}
 <div id="xf" class="xf" hidden></div>
 <main id="app"></main>
 <dialog id="dlg"></dialog>
+<dialog id="gd" aria-labelledby="gdt"></dialog>
 <div id="toast" role="status"></div>
 
 <script src="db.js"></script>
 <script src="sync.js" data-keys="isx.mind.v1"></script>
 <script src="ui.js"></script>
+<script src="techniques.js"></script>
 <script type="isx/app">
 'use strict';
 const KEY='isx.mind.v1', RUN='isx.mind.run', PAGE=20;
@@ -810,7 +831,8 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   const DESC={breath:'Breathe with the bubble',sit:'Quiet screen, soft light',guide:'Prompts with a soft bell',write:'Prompts and a writing pad'};
   const paint=()=>{
     f.querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on',b.dataset.k===kind));
-    $('#td').innerHTML=TECH[kind].map(t=>`<button type="button" data-t="${esc(t)}"${t===tech?' class="on"':''}>${esc(t)}</button>`).join('');
+    $('#td').innerHTML=TECH[kind].map(t=>{const b=`<button type="button" data-t="${esc(t)}"${t===tech?' class="on"':''}>${window.TQG?.mini(t,PACE[t])||''}${esc(t)}</button>`;
+      return window.TQG?.get(t)?`<div class="tqr">${b}<button type="button" class="tq-ib" data-g="${esc(t)}" aria-label="${esc(t)}: how to do it"><span class="tq-i" aria-hidden="true">i</span></button></div>`:b}).join('');
     f.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===String(pm(e.mins.value)||'')));
     const m=mode(kind);$('#o-settle').hidden=m!=='sit';$('#o-voice').hidden=m!=='guide';$('#md').textContent=DESC[m];
     $('#sg').classList.toggle('off',kind!==SG[si].kind||tech!==SG[si].tech);
@@ -818,6 +840,7 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   const use=i=>{si=i%SG.length;({kind,tech}=SG[si]);e.mins.value=SG[si].mins;$('#why').textContent=why(SG[si]);paint()};
   f.addEventListener('click',ev=>{
     if(ev.target.closest('#nx'))return use(si+1);
+    const g=ev.target.closest('[data-g]');if(g)return guide(g.dataset.g);
     const k=ev.target.closest('[data-k]'),t=ev.target.closest('[data-t]'),m=ev.target.closest('[data-m]');
     if(k){kind=k.dataset.k;tech=lastTech(kind)}if(t)tech=t.dataset.t;if(m)e.mins.value=m.dataset.m;
     if(k||t||m)paint();
@@ -834,9 +857,18 @@ function startForm(only=U.kind!=='all'?U.kind:null){
   });
   sheet();dlg.showModal();f.querySelector('.pri').focus();
 }
+// a technique's guide (techniques.js): its picture and how to do it. The ⓘ beside a technique opens it, on the start
+// screen and in a running session, over whatever is open; DONE, a tap outside, Escape or a swipe down close it
+function guide(t){
+  const d=$('#gd');if(!window.TQG?.get(t)||!d)return;
+  d.innerHTML=`<h3 id="gdt">${esc(t).toUpperCase()}</h3>${TQG.html(t,PACE[t])}
+  <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">DONE</button></div>`;
+  d.onclick=e=>{if(e.target===d||e.target.closest('[data-gx]'))d.close()};
+  d.showModal();d.querySelector('[data-gx]').focus();
+}
 function runView(){
   const m=mode(R.kind),S1=steps(),vis=R.tech==='Candle'?' flame':R.tech==='Single-point'?' pin':'';
-  dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind].toUpperCase()} · ${esc(R.tech).toUpperCase()}</h3>
+  dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind].toUpperCase()} · ${window.TQG?.get(R.tech)?`<button type="button" class="tq-open" id="ti" aria-label="${esc(R.tech)}: how to do it">${esc(R.tech).toUpperCase()}<span class="tq-i" aria-hidden="true">i</span></button>`:esc(R.tech).toUpperCase()}</h3>
   ${R.intent?`<p class="dim c">“${esc(R.intent)}”</p>`:''}
   ${m==='write'?`<p class="gp" id="gp">${esc(S1[0]||'')}</p><textarea id="jn" rows="12" placeholder="Write.">${esc(R.note)}</textarea>`
   :`<div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
@@ -875,6 +907,7 @@ function runView(){
     $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
   };
   $('#rf').onclick=()=>endRun(false);
+  $('#ti')?.addEventListener('click',()=>guide(R.tech));
   $('#rd').onclick=async()=>{if(elapsed()<60000||await UI.confirm({title:'Discard this session?',body:'The time so far is not logged.',ok:'Discard',cancel:'Keep going',danger:true})){clearRun();dlg.close()}};
   clearInterval(RI);RI=setInterval(tick,250);tick();
   sheet();if(!dlg.open)dlg.showModal();
