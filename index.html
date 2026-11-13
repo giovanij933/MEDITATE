@@ -743,8 +743,10 @@ dlg.addEventListener('click',e=>{
   const on=b.classList.contains('on');b.parentNode.querySelectorAll('.on').forEach(x=>x.classList.remove('on'));
   if(!on)b.classList.add('on');b.dispatchEvent(new Event('input',{bubbles:true}));
 });
-// Esc must not drop a session in progress
-dlg.addEventListener('cancel',e=>{if(R)e.preventDefault()});
+// Esc (or a swipe down) never drops a session: a running one goes down to the bar at the bottom (UI.runBar), where a
+// tap brings it back; one that's done and waiting to be saved stays. The timer and the bell carry on underneath
+dlg.addEventListener('cancel',e=>{if(!R)return;e.preventDefault();if(R.done==null&&window.UI?.runBar)putAway()});
+function putAway(){dlg.close();UI.runBar({label:`${KIND[R.kind]} · ${R.tech}`,text:()=>!R?'':R.paused?'Paused':$('#clk')?.textContent||'',open:()=>{if(R)R.done==null?runView():wrapForm()}})}
 // singing-bowl strike: a low fundamental with inharmonic partials and a long tail; n strikes a few seconds apart
 function bell(n=1,soft){
   try{
@@ -772,7 +774,7 @@ function breath(ms){
   return {c:'',left:0,s};
 }
 const settling=()=>R.settle&&elapsed()<60000;
-function clearRun(){clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}try{speechSynthesis.cancel()}catch(e){}wake(false)}
+function clearRun(){window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}try{speechSynthesis.cancel()}catch(e){}wake(false)}
 
 // START suggests a well-rounded practice: among the practices that suit the time of day, the one done least recently
 // (never done first), then its least recent technique, so over the days every practice and technique comes round.
@@ -870,6 +872,7 @@ function guide(t){
   d.showModal();d.querySelector('[data-gx]').focus();
 }
 function runView(){
+  window.UI?.runBar?.(null);
   const m=mode(R.kind),S1=steps(),vis=R.tech==='Candle'?' flame':R.tech==='Single-point'?' pin':'';
   dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind].toUpperCase()} · ${window.TQG?.get(R.tech)?`<button type="button" class="tq-open" id="ti" aria-label="${esc(R.tech)}: how to do it">${esc(R.tech).toUpperCase()}<span class="tq-i" aria-hidden="true">i</span></button>`:esc(R.tech).toUpperCase()}</h3>
   ${R.intent?`<p class="dim c">“${esc(R.intent)}”</p>`:''}
@@ -929,6 +932,7 @@ function journal(){
   return out.filter(o=>o.b.join('').trim()).map(o=>(o.h&&S1.length>1?o.h+'\n':'')+o.b.join('\n').trim()).join('\n\n');
 }
 function wrapForm(){
+  window.UI?.runBar?.(null);
   const note=[R.intent&&`Intention: ${R.intent}`,journal()].filter(Boolean).join('\n\n');
   dlg.innerHTML=`<form id="wf"><h3>SESSION DONE · ${fm(R.done)} ${KIND[R.kind].toUpperCase()}</h3>
   ${rpick('pre','State before',R.pre)}${rpick('post','State after')}${rpick('depth','Depth')}
