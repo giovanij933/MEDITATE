@@ -802,10 +802,13 @@ const why=s=>!s.kat?`New for you: ${KIND[s.kind]} · ${s.tech} — suits the ${s
 // A name too long for the title moves the practice to the line below.
 function plan(){
   const t=ymd(new Date()),done=S.log.some(e=>ymd(new Date(e.at))===t);
+  // art: once you've practiced today, TODAY's row shows what you did, so the picture is of your last technique today
+  const last=done&&S.log.filter(e=>ymd(new Date(e.at))===t&&window.TQG?.get(e.tech)).sort((a,b)=>b.at-a.at)[0],did=last&&TQG.art(last.tech,PACE[last.tech]);
   return TOD.map(([,h0,h1])=>{
     const s=suggest(null,h0)[0],k=KIND[s.kind],full=`${k} · ${s.tech}`,long=full.length>28,pre=`${long?k+' · ':''}${s.mins} min · `;
     const w=!s.kat?`new for you · suits the ${s.tod}`:`${s.tat?'':'new technique · '}least recent ${s.tod} practice`;
-    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+((pre+w).length>64?`least recent ${s.tod} practice`:w),act:'plan',done};
+    // art: the technique's picture, for TODAY's plan (techniques.js)
+    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+((pre+w).length>64?`least recent ${s.tod} practice`:w),act:'plan',done,art:did||window.TQG?.art(s.tech,PACE[s.tech])||undefined};
   });
 }
 

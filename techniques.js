@@ -84,5 +84,13 @@ window.TQG=(()=>{
     return `<div class="tq"><div class="tq-pic">${br?curve(P,true):fig(g)}</div><dl class="tq-l">${br?row('Pattern',pattern(P))+row('Pace',pace(P)):row('Attention',g.at)}${
       g.order?row('Order',g.order):''}${row('How',g.how)}${row('Good for',g.good)}</dl></div>`;
   };
-  return {get,mini,html,size:Object.keys(G).length};
+  // TODAY's plan art (isionxxx ARCHITECTURE.md, 2h): a picture as a small SVG in the shared plan-art classes (pa-*), which
+  // TODAY colours with the palette, light or dark, so it shows without this app's CSS. M: class here → [pa classes, attributes]
+  const toArt=(svg,M)=>{try{const r=new DOMParser().parseFromString(svg,'image/svg+xml').documentElement;if(r.nodeName!=='svg')return '';
+    [r,...r.querySelectorAll('*')].forEach(e=>{const k=[];(e.getAttribute('class')||'').split(/\s+/).forEach(c=>{const m=M[c];if(!m)return;if(m[0])k.push(m[0]);for(const a in m[1]||{})e.setAttribute(a,m[1][a])});
+      e.removeAttribute('class');e.removeAttribute('style');e.removeAttribute('aria-hidden');if(k.length)e.setAttribute('class',k.join(' '))});
+    return new XMLSerializer().serializeToString(r)}catch(e){return ''}};
+  // TODAY's plan: the picture beside the suggested technique
+  const art=(name,P)=>{const g=get(name);if(!g)return '';return toArt(P&&!g.at?curve(P):fig(g),{'tq-a':['pa-a'],'tq-l':['pa-sp',{fill:'none','stroke-width':'2'}],'tq-p':['pa-p'],'tq-s':['pa-s'],'tq-n':['pa-n']})};
+  return {get,mini,html,art,size:Object.keys(G).length};
 })();
