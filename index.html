@@ -146,6 +146,9 @@ textarea{resize:vertical}
 .cue em{font-style:normal;font-size:28px;letter-spacing:0;color:var(--tx)}
 .clock{font-size:22px;font-weight:600;text-align:center;margin-bottom:4px;letter-spacing:.04em}
 .held .ball{opacity:.45}.held .cue,.clock.held{color:var(--dim)}
+/* the breathing orb (UI.gl) takes the bubble's place once it's drawn; the 2D bubble is what shows until then, or without WebGL */
+.bub canvas.orb{position:absolute;inset:16px;width:calc(100% - 32px);height:calc(100% - 32px);display:block;transition:opacity .5s}
+.bub.gl .ball{visibility:hidden}.held canvas.orb{opacity:.45}
 .c{text-align:center}
 .cue small{font-size:10px;color:var(--dim);letter-spacing:.06em}
 .gp{text-align:center;min-height:3em;margin:4px 0 10px;font-size:14px;line-height:1.5;color:var(--tx)}
@@ -329,7 +332,7 @@ const sheet=()=>dlg.classList.add('ss');
 // focus goes back to what opened the dialog, but a save redraws it (a log row's EDIT) and the ··· menu hides its items:
 // then its new copy, else START, instead of the top of the page
 let opener=null;
-dlg.addEventListener('close',()=>{dlg.classList.remove('ss');const o=opener;opener=null;setTimeout(()=>{if(dlg.open||document.activeElement&&document.activeElement!==document.body)return;
+dlg.addEventListener('close',()=>{dlg.classList.remove('ss');orbOff();const o=opener;opener=null;setTimeout(()=>{if(dlg.open||document.activeElement&&document.activeElement!==document.body)return;
   const a=o?.dataset.a,v=o?.dataset.v,t=a&&document.querySelector(`[data-a="${a}"]${v?`[data-v="${CSS.escape(v)}"]`:''}`);(t?.offsetParent?t:$('[data-a=go]')).focus()})});
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -729,7 +732,7 @@ const STEPS={
 };
 const mode=k=>k==='B'?'breath':k==='S'||k==='V'?'guide':k==='J'?'write':'sit';
 const steps=()=>STEPS[R.tech]||STEPS[R.kind]||[];
-let R=null,RI=0,RA=0,WL=null,AC=null;
+let R=null,RI=0,RA=0,WL=null,AC=null,ORB=null,ORBN=0;
 try{R=JSON.parse(localStorage.getItem(RUN))}catch(e){}
 // a run saved by the earlier timer lacks the newer fields; one with no practice or start (corrupted) is dropped, or
 // it would throw here on every start and leave START reopening it
@@ -777,7 +780,56 @@ function breath(ms){
   return {c:'',left:0,s};
 }
 const settling=()=>R.settle&&elapsed()<60000;
-function clearRun(){window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}window.UI?.replan?.();try{speechSynthesis.cancel()}catch(e){}wake(false)}
+function clearRun(){orbOff();window.UI?.runBar?.(null);clearInterval(RI);cancelAnimationFrame(RA);RI=0;R=null;try{localStorage.removeItem(RUN)}catch(e){}window.UI?.replan?.();try{speechSynthesis.cancel()}catch(e){}wake(false)}
+
+/* the breathing orb (UI.gl, ARCHITECTURE.md 2m): the bubble as a soft, lit sphere that breathes with the same pacer and
+   drifts on a slow 12 s swell in a quiet sit. Its surface moves gently (held still under Reduce Motion, where it only
+   follows the breath, like the bubble). Pale in light and deep in dark, so the cue on it stays easy to read. It's drawn
+   only on top of the 2D bubble: no WebGL, no Three.js or any failure, and the bubble simply stays. */
+const ORBV=`uniform float uT; uniform float uAmp; varying vec3 vN; varying vec3 vV; varying float vZ;
+vec3 m289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;} vec4 m289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 prm(vec4 x){return m289(((x*34.0)+1.0)*x);} vec4 tis(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float sn(vec3 v){ const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx); vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g;
+  vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy); vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy; i=m289(i);
+  vec4 p=prm(prm(prm(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+  vec3 ns=0.142857142857*D.wyz-D.xzx; vec4 j=p-49.0*floor(p*ns.z*ns.z); vec4 a_=floor(j*ns.z); vec4 b_=floor(j-7.0*a_);
+  vec4 x=a_*ns.x+ns.yyyy; vec4 y=b_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y); vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+  vec4 nm=tis(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3))); p0*=nm.x; p1*=nm.y; p2*=nm.z; p3*=nm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3))); }
+void main(){ vec3 p=position; float n=sn(p*1.05+vec3(0.0,uT*.2,uT*.13)); float n2=sn(p*2.2-vec3(uT*.25));
+  p+=normal*uAmp*(n*.85+n2*.15); vZ=n; vec4 mv=modelViewMatrix*vec4(p,1.0);
+  vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`;
+const ORBF=`uniform vec3 uA; uniform vec3 uB; uniform vec3 uRim; varying vec3 vN; varying vec3 vV; varying float vZ;
+void main(){ vec3 n=normalize(vN); float fr=pow(1.0-max(dot(n,normalize(vV)),0.0),2.2);
+  vec3 c=mix(uA,uB,clamp(.5+.45*n.y+.35*vZ,0.0,1.0)); c+=.08*max(dot(n,normalize(vec3(-.4,.7,.6))),0.0);
+  gl_FragColor=vec4(mix(c,uRim,fr*.7),1.0); }`;
+const GLOWV=`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+const GLOWF=`uniform vec3 uC; uniform float uK; varying vec2 vUv; void main(){ float r=length(vUv-.5)*2.0; gl_FragColor=vec4(uC,pow(max(1.0-r,0.0),2.2)*uK); }`;
+function orbOff(){ORBN++;if(ORB){ORB.dispose();ORB.canvas.remove();ORB=null}document.querySelectorAll('#bub canvas.orb').forEach(c=>c.remove());$('#bub')?.classList.remove('gl')}
+function orbOn(){
+  const bub=$('#bub');if(!bub||!window.UI?.gl?.ok())return;
+  const c=document.createElement('canvas'),n=++ORBN;c.className='orb';c.setAttribute('aria-hidden','true');bub.insertBefore(c,$('#pc'));
+  UI.gl(c,s=>{
+    const T=s.THREE,mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);let lv=.45,tm=0;
+    s.camera=new T.PerspectiveCamera(30,1,.1,20);s.camera.position.z=4.15;
+    const u={uT:{value:0},uAmp:{value:.045},uA:{value:new T.Vector3()},uB:{value:new T.Vector3()},uRim:{value:new T.Vector3()}};
+    const g={uC:{value:new T.Vector3()},uK:{value:.2}};
+    const orb=new T.Mesh(new T.SphereGeometry(1,96,96),new T.ShaderMaterial({uniforms:u,vertexShader:ORBV,fragmentShader:ORBF}));
+    const glow=new T.Mesh(new T.PlaneGeometry(4.4,4.4),new T.ShaderMaterial({uniforms:g,transparent:true,depthWrite:false,vertexShader:GLOWV,fragmentShader:GLOWF}));
+    glow.position.z=-1.5;s.scene.add(glow,orb);
+    s.theme=()=>{const bg=s.rgb('--background'),acc=s.rgb('--accent'),inf=s.rgb('--info'),dk=bg[0]+bg[1]+bg[2]<1.5;
+      u.uA.value.fromArray(mix(acc,bg,dk?.62:.8));u.uB.value.fromArray(mix(inf,bg,dk?.7:.55));u.uRim.value.fromArray(mix(acc,bg,dk?.15:.35));
+      g.uC.value.fromArray(mix(inf,bg,dk?.4:.2));glow.material.blending=dk?T.AdditiveBlending:T.NormalBlending;glow.material.needsUpdate=true};
+    s.level=v=>{lv=v};
+    s.running=()=>!!R&&R.done==null&&!R.paused;
+    s.update=dt=>{if(!s.still)tm+=dt;u.uT.value=tm;orb.scale.setScalar(lv);glow.scale.setScalar(.6+lv*.5);g.uK.value=.16+.3*Math.max(0,(lv-.45)/.55)};
+  }).then(s=>{if(!s){c.remove();return}if(n!==ORBN||!c.isConnected){s.dispose();c.remove();return}ORB=s;bub.classList.add('gl');s.update(0);s.draw();s.kick()});
+}
 
 // START suggests a well-rounded practice: among the practices that suit the time of day, the one done least recently
 // (never done first), then its least recent technique, so over the days every practice and technique comes round.
@@ -886,7 +938,7 @@ function moodStep(go){
   dlg.querySelector('[data-md="5"]').focus();
 }
 function runView(){
-  window.UI?.runBar?.(null);
+  window.UI?.runBar?.(null);orbOff();
   const m=mode(R.kind),S1=steps(),vis=R.tech==='Candle'?' flame':R.tech==='Single-point'?' pin':'';
   dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind]} · ${window.TQG?.get(R.tech)?`<button type="button" class="tq-open" id="ti" aria-label="${esc(R.tech)}: how to do it">${esc(R.tech)}<span class="tq-i" aria-hidden="true">i</span></button>`:esc(R.tech)}</h3>
   ${R.intent?`<p class="dim c">“${esc(R.intent)}”</p>`:''}
@@ -918,9 +970,10 @@ function runView(){
   const anim=()=>{
     const b=$('#ball');if(!R||R.done!=null||!b)return;
     const s=m==='breath'||settling()?breath(elapsed()).s:.72+.1*Math.sin(elapsed()/12000*2*Math.PI);
-    b.style.transform=`scale(${s.toFixed(3)})`;RA=requestAnimationFrame(anim);
+    b.style.transform=`scale(${s.toFixed(3)})`;if(ORB){ORB.level(s);ORB.kick()}RA=requestAnimationFrame(anim);
   };
   cancelAnimationFrame(RA);RA=requestAnimationFrame(anim);
+  if(m!=='write'&&!vis)orbOn();
   if(m==='write')$('#jn').oninput=e=>{R.note=e.target.value;keepRun()};
   $('#rp').onclick=()=>{
     if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else{R.paused=Date.now();try{speechSynthesis.cancel()}catch(e){}}
@@ -934,7 +987,7 @@ function runView(){
   wake(true);
 }
 function endRun(auto){
-  clearInterval(RI);cancelAnimationFrame(RA);RI=0;try{speechSynthesis.cancel()}catch(e){}
+  orbOff();clearInterval(RI);cancelAnimationFrame(RA);RI=0;try{speechSynthesis.cancel()}catch(e){}
   R.done=auto?R.target:Math.max(.1,Math.round(elapsed()/6000)/10);
   if(auto){bell(3);navigator.vibrate?.([200,120,200])}
   keepRun();wake(false);wrapForm();
