@@ -46,8 +46,8 @@ button:hover,select:hover{border-color:var(--accent);color:var(--accent-text)}
 .g4{grid-template-columns:repeat(4,1fr)}.g21{grid-template-columns:2fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
 .card{background:var(--panel);border:1px solid var(--line);padding:16px;min-width:0}
 .card.gap{margin-bottom:12px}
-.h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-primary);margin-bottom:12px}
-.k{font-size:11px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.h{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:12px}
+.k{font-size:12px;color:var(--dim)}
 .big{font-size:22px;font-weight:600;margin:2px 0 8px}
 .rowh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .empty{margin-bottom:12px;border-color:var(--border)}
@@ -64,11 +64,11 @@ button:hover,select:hover{border-color:var(--accent);color:var(--accent-text)}
 .ev.rule{border-top:1px solid var(--line);margin-top:4px;padding-top:10px}
 .hb{height:20px;background:var(--track);margin:2px 0 10px}
 .hb i{display:block;height:100%}
-.sec{font-size:10px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;margin:12px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+.sec{font-size:11px;color:var(--dim);margin:12px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
 .sec.first{border:0;margin-top:0;padding-top:0}
 
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,.9fr);gap:4px}
-.dw{font-size:11px;color:var(--dim);text-align:center;padding:4px 0;letter-spacing:.05em;text-transform:uppercase}
+.dw{font-size:12px;color:var(--dim);text-align:center;padding:4px 0}
 .cd{min-height:66px;padding:6px;border:1px solid var(--line);background:var(--raised);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11px;letter-spacing:0;color:var(--dim);overflow:hidden}
 .cd b{font-size:12px}.cd em{font-style:normal;font-size:10px}
 .cd.we,.cd.off{background:repeating-linear-gradient(135deg,var(--raised) 0 6px,var(--border-soft) 6px 7px)}
@@ -103,7 +103,7 @@ tr.pick:hover td{background:var(--hover)}tr.on td{background:var(--accent-soft)}
 .gauge path.pick:hover{filter:brightness(1.3)}.gauge path.off,.chart .off{opacity:.25}
 .chart rect.pick:hover{filter:brightness(1.35)}.chart .hit{fill:transparent}.chart .hit:hover{fill:var(--accent-soft)}
 .xf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-4px 0 12px}
-.xf span{color:var(--dim);font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-right:2px}
+.xf span{color:var(--dim);font-size:12px;margin-right:2px}
 .xf button{border-color:var(--accent);color:var(--accent-text);padding:5px 8px}.xf button b{font-weight:600}.xf .clr{border-color:var(--line2);color:var(--dim)}
 .nd{height:160px;display:grid;place-items:center;color:var(--dim);letter-spacing:.06em;font-size:11px}
 .radar{display:block;width:100%;max-width:230px;margin:0 auto}
@@ -115,7 +115,7 @@ tr.pick:hover td{background:var(--hover)}tr.on td{background:var(--accent-soft)}
 table{width:100%;min-width:980px;border-collapse:collapse}
 table.sm{min-width:560px}
 th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:11px;font-weight:500;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+th{font-size:12px;font-weight:500;color:var(--dim)}
 th.r,td.r{text-align:right}
 td button{padding:2px 7px;font-size:11px}
 footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;font-size:11px;color:var(--dim)}
@@ -124,10 +124,10 @@ footer p{flex-basis:100%}
 
 dialog{background:var(--panel);color:var(--tx);border:1px solid var(--border-soft);padding:20px;width:min(560px,calc(100vw - 24px))}
 dialog::backdrop{background:var(--scrim)}
-dialog h3{margin:0 0 14px;font-size:13px;letter-spacing:.06em;color:var(--text-primary)}
+dialog h3{margin:0 0 14px;font-size:17px;font-weight:600;color:var(--text-primary)}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .fgrid>button{align-self:end}
-label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
 label input,label select,label textarea,dialog textarea{width:100%;font-size:13px;letter-spacing:0;text-transform:none;color:var(--tx)}
 textarea{resize:vertical}
 .fa2{display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:14px}
@@ -160,7 +160,7 @@ label.ck input{width:auto}
 dialog.rvd{width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
 .rvh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.rvh h3{margin:0;flex:1}
 .rvd .rv{border-top:1px solid var(--line);padding:14px 0 4px;font-size:14px;line-height:1.7}
-.rvd .rv h4{margin:0 0 6px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.rvd .rv h4{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--dim)}
 .rvd .rv p{margin:0 0 8px}.rvd .rv b{font-weight:600}.rvd .rv q{color:var(--dim);font-style:italic}
 .rvd .rv ol,.rvd .rv ul{margin:0 0 8px;padding-left:22px}.rvd .rv li{margin:0 0 6px}.rvd .rv li::marker{color:var(--dim)}
 .rvd .rv .tr{display:block;color:var(--dim);font-size:12px}
@@ -187,7 +187,7 @@ dialog.ss::backdrop{background:var(--scrim);-webkit-backdrop-filter:blur(8px);ba
 @keyframes ssIn{from{opacity:0;transform:translateY(32px)}}
 @keyframes ssFade{from{opacity:0;transform:translateY(6px)}}
 dialog.ss>*{display:flex;flex-direction:column;min-height:100%;max-width:520px;margin:0 auto;animation:ssFade .3s ease both}
-dialog.ss h3{align-self:center;text-align:center;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--dim);margin:4px 0 24px}
+dialog.ss h3{align-self:center;text-align:center;font-size:13px;font-weight:600;color:var(--dim);margin:4px 0 24px}
 /* start screen: room to breathe, one family of chips, the action pinned to the bottom */
 dialog.ss .chips{gap:8px;margin:6px 0 20px}
 dialog.ss .chips button{padding:9px 12px}
@@ -230,7 +230,7 @@ dialog.ss .vl button.on em{color:var(--accent-text)}
 .tq-fig .tq-p{fill:var(--accent)}.tq-fig .tq-s{fill:color-mix(in srgb,var(--accent) 40%,var(--track))}
 .tq-cv{display:block}.tq-cv .tq-a{fill:color-mix(in srgb,var(--accent) 16%,transparent)}.tq-cv .tq-l{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
 .tq-cv .tq-sep{stroke:var(--line2);stroke-dasharray:2 2}
-.tq-cv text{font-family:var(--f);text-anchor:middle;font-size:11px}.tq-cv .tq-cl{font-weight:600;letter-spacing:.04em;text-transform:uppercase;fill:var(--text-primary)}.tq-cv .tq-cn{fill:var(--text-secondary)}
+.tq-cv text{font-family:var(--f);text-anchor:middle;font-size:11px}.tq-cv .tq-cl{font-weight:600;fill:var(--text-primary)}.tq-cv .tq-cn{fill:var(--text-secondary)}
 .tq-mini{flex:none;width:52px;display:inline-flex;align-items:center;justify-content:center}.tq-mini .tq-fig{width:auto;height:34px}
 dialog.ss .vl .tqr{display:flex;align-items:stretch;border-bottom:1px solid var(--line);transition:background-color .18s}
 dialog.ss .vl .tqr>button[data-t]{flex:1;min-width:0;border-bottom:0;padding-top:6px;padding-bottom:6px;min-height:46px}
@@ -242,7 +242,7 @@ dialog.ss .vl .tq-ib:focus-visible,.tq-open:focus-visible{outline:2px solid var(
 .tq-i{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;color:var(--accent-text);font:600 11px/1 var(--f);text-transform:none;letter-spacing:0}
 .tq{margin:0 0 14px}.tq-pic{display:flex;justify-content:center;margin:4px 0 18px}.tq-pic .tq-fig{width:min(40%,96px)}.tq-pic .tq-cv{width:100%;max-width:340px;height:auto}
 .tq-l{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;line-height:1.45}
-.tq-l dt{padding-top:2px;color:var(--text-secondary);font-size:11px;letter-spacing:.05em;text-transform:uppercase}.tq-l dd{margin:0;color:var(--text-primary)}
+.tq-l dt{padding-top:2px;color:var(--text-secondary);font-size:12px}.tq-l dd{margin:0;color:var(--text-primary)}
 /* the suggested session on the start screen: why it was picked, and a shuffle to the next one */
 dialog.ss .sg{display:flex;align-items:center;gap:10px;margin:0 0 20px;padding:10px 12px;border:1px solid var(--accent-line);background:var(--accent-soft);transition:opacity .18s}
 dialog.ss .sg p{flex:1;font-size:12px;line-height:1.5}
@@ -261,12 +261,12 @@ h1.brand{margin:0}
 <header class="top">
   <h1 class="brand">ISIONXXX MIND</h1>
   <div class="acts">
-    <button class="pri" data-a="go">&#9654; START</button>
-    <button data-a="add">+ LOG</button>
-    <button data-a="review" data-more>REVIEW</button>
-    <button data-a="note" data-more>NOTES</button>
-    <button data-a="imp" data-more>IMPORT</button>
-    <button data-a="set" data-more>SETTINGS</button>
+    <button class="pri" data-a="go">&#9654; Start</button>
+    <button data-a="add">+ Log</button>
+    <button data-a="review" data-more>Review</button>
+    <button data-a="note" data-more>Notes</button>
+    <button data-a="imp" data-more>Import</button>
+    <button data-a="set" data-more>Settings</button>
     <input id="file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
   </div>
 </header>
@@ -434,7 +434,7 @@ function byKind(T){
 }
 
 /* ---------- svg ---------- */
-const ARC='M12 62A50 50 0 0 1 112 62', ND='<div class="nd">NO DATA_</div>';
+const ARC='M12 62A50 50 0 0 1 112 62', ND='<div class="nd">No data</div>';
 // a segment can carry a cross-filter (f = 'key:value'): click it to filter, and it stays bright while the others dim
 function gauge(segs,label){
   let off=0;
@@ -470,7 +470,7 @@ function radar(ax){
   const cx=100,cy=92,R=68,ang=[-90,30,150].map(a=>a*Math.PI/180);
   const pt=(i,f)=>`${(cx+Math.cos(ang[i])*R*f).toFixed(1)},${(cy+Math.sin(ang[i])*R*f).toFixed(1)}`;
   const poly=(c,fs)=>`<polygon class="${c}" points="${fs.map((f,i)=>pt(i,f)).join(' ')}"/>`;
-  return `<svg class="radar" viewBox="0 0 200 160">${[.25,.5,.75,1].map(f=>poly('rg',[f,f,f])).join('')}${poly('rv',ax.map(v=>Math.max(v,3)/100))}<text x="100" y="14" text-anchor="middle">CONSISTENCY</text><text x="168" y="144" text-anchor="middle">LIFT %</text><text x="30" y="144" text-anchor="middle">FACTOR</text></svg>`;
+  return `<svg class="radar" viewBox="0 0 200 160">${[.25,.5,.75,1].map(f=>poly('rg',[f,f,f])).join('')}${poly('rv',ax.map(v=>Math.max(v,3)/100))}<text x="100" y="14" text-anchor="middle">Consistency</text><text x="168" y="144" text-anchor="middle">Lift %</text><text x="30" y="144" text-anchor="middle">Factor</text></svg>`;
 }
 
 /* ---------- render ---------- */
@@ -503,7 +503,7 @@ function calendar(){
   <div class="rowh"><div><p class="h">Practice calendar</p><div class="k">Mood shift this month</div><div class="big ${cls(tot)}">${sg(tot,1)}</div></div>
    <div>Better: <b class="pos">${wd}</b> &nbsp; Worse: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
-  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">TODAY</button></div>
+  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button></div>
    <span class="dim">${td} practice day${td===1?'':'s'} · ${nT} session${nT===1?'':'s'} · ${hm(mT)}</span></div></div>`;
 }
 
@@ -525,8 +525,8 @@ function table(T){
    <td class="r">${n1(e.mins)}</td><td class="r">${e.pre??na}</td><td class="r">${e.post??na}</td><td class="r">${e.depth??na}</td>
    <td class="r">${e.d==null?na:`<b class="${cls(e.d)}">${sg(e.d,1)}</b>`}</td>
    <td class="dim" title="${esc(e.note)}">${esc(e.note.length>44?e.note.slice(0,43)+'…':e.note)}</td>
-   <td class="r"><button data-a="edit" data-v="${esc(e.id)}">EDIT</button> <button data-a="del" data-v="${esc(e.id)}" aria-label="Delete session">X</button></td></tr>`).join('');
-  return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">EXPORT CSV</button></div>
+   <td class="r"><button data-a="edit" data-v="${esc(e.id)}">Edit</button> <button data-a="del" data-v="${esc(e.id)}" aria-label="Delete session">X</button></td></tr>`).join('');
+  return `<div class="card"><div class="rowh"><p class="h">Log</p><button data-a="csv">Export CSV</button></div>
   <div class="tw" tabindex="0" role="region" aria-label="Session log"><table><thead><tr><th>${F.th(0)}</th><th>${F.th(1)}</th><th>${F.th(2)}</th><th class="r">${F.th(3)}</th><th class="r">${F.th(4)}</th><th class="r">${F.th(5)}</th><th class="r">${F.th(6)}</th><th class="r">${F.th(7)}</th><th>${F.th(8)}</th><th><span class="ui-sr">Actions</span></th></tr></thead>
   <tbody>${body||'<tr><td colspan="10" class="dim">No sessions in this view_</td></tr>'}</tbody></table></div>
   <div class="calf"><div><button data-a="pp">&lt;</button> Page <b>${U.page+1}</b> of ${pages} <button data-a="pn">&gt;</button></div><span class="dim">${rows.length} record${rows.length===1?'':'s'}${F.clear()}</span></div></div>`;
@@ -597,7 +597,7 @@ function render(){
   const top=KK.slice().sort((a,b)=>b.m-a.m)[0],eff=KK.filter(g=>g.c>=2&&g.avg!=null).sort((a,b)=>b.avg-a.avg)[0],mx=Math.max(1,...TB.map(t=>t.m)),km=Math.max(1,...KK.map(g=>g.m));
 
   UI.paint($('#top'),heroToday(),{now:true});
-  UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; START</button> <button data-a="add">+ LOG</button> <button data-a="imp">IMPORT</button> <button data-a="sample">LOAD SAMPLE</button></div>`}
+  UI.paint($('#app'),`${S.log.length?'':`<div class="card empty"><p class="h">Nothing logged</p><p class="dim">Start a timed session, log one by hand, import a CSV, or load a sample year to see how it reads.</p><button class="pri" data-a="go">&#9654; Start</button> <button data-a="add">+ Log</button> <button data-a="imp">Import</button> <button data-a="sample">Load sample</button></div>`}
 <section class="g g4">
  <div class="card"><p class="h">Streak</p><div class="k">Days in a row</div><div class="big ${A.dsCur?'pos':''}">${A.dsCur} day${A.dsCur===1?'':'s'}</div>
   ${gauge([[m.wkDays/7,'sg',wkF,`This week: ${m.wkDays} of 7 days practiced — click to show this week`]],`${m.wkDays}/7`)}
@@ -651,32 +651,32 @@ ${table(T)}
 function entryForm(t){
   const d=t||{kind:U.kind!=='all'?U.kind:'M',tech:'',at:Date.now(),mins:'',pre:null,post:null,depth:null,note:''};
   const rate=(name,label,v)=>`<label>${label} (1–10)<input name="${name}" type="number" min="1" max="10" step="0.5" value="${v??''}"></label>`;
-  dlg.innerHTML=`<form id="tf"><h3>${t?'EDIT':'NEW'} SESSION</h3>
+  dlg.innerHTML=`<form id="tf"><h3>${t?'Edit':'New'} session</h3>
   <div class="fgrid">
    <label>Practice<select name="kind">${Object.entries(KIND).map(([k,v])=>`<option value="${k}"${k===d.kind?' selected':''}>${v}</option>`).join('')}</select></label>
    <label>Technique<input name="tech" list="tch" autocomplete="off" value="${esc(d.tech)}"></label>
    <label>When<input name="when" type="datetime-local" required value="${dtl(d.at).slice(0,16)}"></label>
    <label>Minutes<input name="mins" inputmode="decimal" autocomplete="off" required value="${d.mins}"></label>
    ${rate('pre','State before',d.pre)}${rate('post','State after',d.post)}
-   ${rate('depth','Depth',d.depth)}<button type="button" id="tm">START TIMER</button>
+   ${rate('depth','Depth',d.depth)}<button type="button" id="tm">Start timer</button>
   </div>
   <label>Note / journal<textarea name="note" rows="6">${esc(d.note||'')}</textarea></label>
   <datalist id="tch"></datalist>
-  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  <div class="fa2"><span id="pv"></span><button type="button" data-a="x">Cancel</button><button class="pri">Save</button></div></form>`;
   const f=$('#tf'),e=f.elements,tb=$('#tm'),nv=x=>x.value===''?null:+x.value;
   // minutes as text, read like the CSV import (12.5, 12,5 or 12:30): a number field drops a decimal comma, so 7,5 saved as 75
   const read=()=>({kind:e.kind.value,tech:e.tech.value.trim(),at:new Date(e.when.value).getTime(),mins:pm(e.mins.value),pre:nv(e.pre),post:nv(e.post),depth:nv(e.depth),note:e.note.value.trim()});
   const sync=()=>{
     techs(e.kind.value);
-    const v=read();$('#pv').innerHTML=v.pre!=null&&v.post!=null?`SHIFT <b class="${cls(v.post-v.pre)}">${sg(v.post-v.pre,1)}</b>`:'';
+    const v=read();$('#pv').innerHTML=v.pre!=null&&v.post!=null?`Shift <b class="${cls(v.post-v.pre)}">${sg(v.post-v.pre,1)}</b>`:'';
   };
   // timer: rate "before", start, practise, stop, rate "after". Runs off the clock, so a sleeping screen doesn't lose time.
   let t0=0,iv=0;
   tb.onclick=()=>{
-    if(iv){clearInterval(iv);iv=0;tb.textContent='START TIMER';return}
+    if(iv){clearInterval(iv);iv=0;tb.textContent='Start timer';return}
     t0=Date.now()-pm(e.mins.value)*60000;
-    iv=setInterval(()=>{const m=(Date.now()-t0)/60000;e.mins.value=+m.toFixed(1);tb.textContent='STOP '+fm(m)},500);
-    tb.textContent='STOP '+fm((Date.now()-t0)/60000);
+    iv=setInterval(()=>{const m=(Date.now()-t0)/60000;e.mins.value=+m.toFixed(1);tb.textContent='Stop '+fm(m)},500);
+    tb.textContent='Stop '+fm((Date.now()-t0)/60000);
   };
   dlg.addEventListener('close',()=>clearInterval(iv),{once:true});
   f.addEventListener('input',sync);sync();
@@ -765,6 +765,8 @@ function say(t){
 async function wake(on){try{if(on&&!WL){WL=await navigator.wakeLock?.request('screen');WL?.addEventListener('release',()=>WL=null)}else if(!on&&WL){WL.release();WL=null}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R&&R.done==null)wake(true)});
 // where the bubble is at ms into the session: cue, seconds left in the phase, scale (.45 empty – 1 full)
+// what the pacer shows for each cue (the cues themselves are keys)
+const CUE={INHALE:'Inhale',EXHALE:'Exhale',HOLD:'Hold','TOP UP':'Top up'};
 function breath(ms){
   const P=PACE[R.tech]||CALM;let x=ms/1000%P.reduce((a,p)=>a+p[1],0),s=.45;
   for(const[c,d]of P){
@@ -821,19 +823,19 @@ function plan(){
 function startForm(only=U.kind!=='all'?U.kind:null){
   const P=pref(),SG=suggest(only);let si=0,kind=SG[0].kind,tech=SG[0].tech;
   const lastTech=k=>S.log.filter(x=>x.kind===k&&x.tech).sort((a,b)=>b.at-a.at)[0]?.tech||TECH[k][0];
-  dlg.innerHTML=`<form id="sf"><h3>START SESSION</h3>
-  <div class="sg" id="sg"><p><b>SUGGESTED</b><span id="why"></span></p><button type="button" id="nx" title="Next suggestion">↻ ANOTHER</button></div>
+  dlg.innerHTML=`<form id="sf"><h3>Start session</h3>
+  <div class="sg" id="sg"><p><b>Suggested</b><span id="why"></span></p><button type="button" id="nx" title="Next suggestion">↻ Another</button></div>
   <span class="k">Practice</span><div class="vl" id="kd">${Object.entries(KIND).map(([k,v])=>`<button type="button" data-k="${k}">${v}<em>${KDESC[k]}</em></button>`).join('')}</div>
   <span class="k">Technique</span><div class="vl" id="td"></div>
   <span class="k">Minutes</span>
-  <div class="chips">${CHIPS.map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">OPEN</button><input name="mins" inputmode="decimal" autocomplete="off" placeholder="open" aria-label="Minutes" value="${SG[0].mins}"></div>
+  <div class="chips">${CHIPS.map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="">Open</button><input name="mins" inputmode="decimal" autocomplete="off" placeholder="open" aria-label="Minutes" value="${SG[0].mins}"></div>
   <div class="fgrid">
    <label>Interval bell<select name="bells">${[[0,'Off'],[1,'Every minute'],[2,'Every 2 min'],[5,'Every 5 min'],[10,'Every 10 min']].map(([v,l])=>`<option value="${v}"${v===(P.bells??0)?' selected':''}>${l}</option>`).join('')}</select></label>
    <label>Intention (optional)<input name="intent" autocomplete="off" placeholder="Patience. Stay with the breath."></label>
   </div>
   <label class="ck" id="o-settle"><input type="checkbox" name="settle"${P.settle??true?' checked':''}> Settle in with a minute of slow breathing</label>
   <label class="ck" id="o-voice"><input type="checkbox" name="voice"${P.voice??true?' checked':''}> Read the prompts aloud</label>
-  <div class="fa2"><span class="dim" id="md"></span><button type="button" class="ghost" data-a="x">CANCEL</button><button class="pri">BEGIN</button></div></form>`;
+  <div class="fa2"><span class="dim" id="md"></span><button type="button" class="ghost" data-a="x">Cancel</button><button class="pri">Begin</button></div></form>`;
   const f=$('#sf'),e=f.elements;
   const DESC={breath:'Breathe with the bubble',sit:'Quiet screen, soft light',guide:'Prompts with a soft bell',write:'Prompts and a writing pad'};
   const paint=()=>{
@@ -868,25 +870,25 @@ function startForm(only=U.kind!=='all'?U.kind:null){
 // screen and in a running session, over whatever is open; DONE, a tap outside, Escape or a swipe down close it
 function guide(t){
   const d=$('#gd');if(!window.TQG?.get(t)||!d)return;
-  d.innerHTML=`<h3 id="gdt">${esc(t).toUpperCase()}</h3>${TQG.html(t,PACE[t])}
-  <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">DONE</button></div>`;
+  d.innerHTML=`<h3 id="gdt">${esc(t)}</h3>${TQG.html(t,PACE[t])}
+  <div class="fa2"><button type="button" class="pri" data-gx style="flex:1">Done</button></div>`;
   d.onclick=e=>{if(e.target===d||e.target.closest('[data-gx]'))d.close()};
   d.showModal();d.querySelector('[data-gx]').focus();
 }
 // how you feel before, asked as you press BEGIN: one tap starts the session with it, SKIP starts without. The end
 // asks how you feel after, so the shift is measured (the before can still be changed there)
 function moodStep(go){
-  dlg.innerHTML=`<div class="rv"><h3>BEFORE YOU BEGIN</h3><p class="gp">How do you feel right now?</p>
+  dlg.innerHTML=`<div class="rv"><h3>Before you begin</h3><p class="gp">How do you feel right now?</p>
   <div class="rate mdr">${[1,2,3,4,5,6,7,8,9,10].map(i=>`<button type="button" data-md="${i}">${i}</button>`).join('')}</div>
   <p class="dim c">1 is drained, 10 is great. It's compared with how you feel after.</p>
-  <div class="fa2"><button type="button" id="mds">SKIP</button></div></div>`;
+  <div class="fa2"><button type="button" id="mds">Skip</button></div></div>`;
   dlg.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>go(+b.dataset.md));$('#mds').onclick=()=>go(null);
   dlg.querySelector('[data-md="5"]').focus();
 }
 function runView(){
   window.UI?.runBar?.(null);
   const m=mode(R.kind),S1=steps(),vis=R.tech==='Candle'?' flame':R.tech==='Single-point'?' pin':'';
-  dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind].toUpperCase()} · ${window.TQG?.get(R.tech)?`<button type="button" class="tq-open" id="ti" aria-label="${esc(R.tech)}: how to do it">${esc(R.tech).toUpperCase()}<span class="tq-i" aria-hidden="true">i</span></button>`:esc(R.tech).toUpperCase()}</h3>
+  dlg.innerHTML=`<div class="rv"><h3>${KIND[R.kind]} · ${window.TQG?.get(R.tech)?`<button type="button" class="tq-open" id="ti" aria-label="${esc(R.tech)}: how to do it">${esc(R.tech)}<span class="tq-i" aria-hidden="true">i</span></button>`:esc(R.tech)}</h3>
   ${R.intent?`<p class="dim c">“${esc(R.intent)}”</p>`:''}
   ${m==='write'?`<p class="gp" id="gp">${esc(S1[0]||'')}</p><textarea id="jn" rows="12" placeholder="Write.">${esc(R.note)}</textarea>`
   :`<div class="bub" id="bub"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="rt" cx="120" cy="120" r="118"/><circle class="rp" id="pg" cx="120" cy="120" r="118" pathLength="100" stroke-dasharray="0 100"/></svg>
@@ -894,7 +896,7 @@ function runView(){
   <p class="gp" id="gp"></p>`}
   <div class="clock" id="clk"></div>
   <p class="dim c">${R.target?`${fm(R.target)} · closes with the bell`:'Open session · finish when ready'}${R.bells?` · bell every ${R.bells} min`:''}</p>
-  <div class="fa2"><button type="button" class="ghost" id="rd">DISCARD</button><button type="button" id="rp">${R.paused?'RESUME':'PAUSE'}</button><button type="button" class="pri" id="rf">FINISH</button></div></div>`;
+  <div class="fa2"><button type="button" class="ghost" id="rd">Discard</button><button type="button" id="rp">${R.paused?'Resume':'Pause'}</button><button type="button" class="pri" id="rf">Finish</button></div></div>`;
   // prompts are spread evenly over a timed session; an open session moves on every 90 s
   const stepLen=()=>R.target&&S1.length?R.target*60000/S1.length:90000;
   const tick=()=>{
@@ -902,10 +904,10 @@ function runView(){
     $('#clk').textContent=fm(R.target?R.target-el:el);$('#clk').classList.toggle('held',!!R.paused);
     $('#bub')?.classList.toggle('held',!!R.paused);
     if(R.target&&$('#pg'))$('#pg').setAttribute('stroke-dasharray',`${(el/R.target*100).toFixed(2)} 100`);
-    if(R.paused){if($('#pc'))$('#pc').innerHTML='PAUSED';return}
+    if(R.paused){if($('#pc'))$('#pc').innerHTML='Paused';return}
     // interval bell (not on top of the closing bell)
     if(R.bells){const k=Math.floor(el/R.bells);if(k>R.lb){R.lb=k;if(!R.target||R.target-el>.5)bell(1,1);keepRun()}}
-    if(m==='breath'||settling()){const b=breath(ms);$('#pc').innerHTML=`${settling()?'<small>SETTLE IN</small>':''}${b.c}<em>${b.left}</em>`;$('#gp').textContent='';return}
+    if(m==='breath'||settling()){const b=breath(ms);$('#pc').innerHTML=`${settling()?'<small>Settle in</small>':''}${CUE[b.c]||b.c}<em>${b.left}</em>`;$('#gp').textContent='';return}
     if(R.settle&&!R.st){R.st=true;bell(1,1);keepRun()}
     if(m==='sit'){$('#pc').innerHTML='';$('#gp').textContent=TIP[R.tech]||TIP[R.kind];return}
     const i=Math.min(Math.floor(ms/stepLen()),S1.length-1);
@@ -922,7 +924,7 @@ function runView(){
   if(m==='write')$('#jn').oninput=e=>{R.note=e.target.value;keepRun()};
   $('#rp').onclick=()=>{
     if(R.paused){R.t0+=Date.now()-R.paused;R.paused=null}else{R.paused=Date.now();try{speechSynthesis.cancel()}catch(e){}}
-    $('#rp').textContent=R.paused?'RESUME':'PAUSE';keepRun();tick();
+    $('#rp').textContent=R.paused?'Resume':'Pause';keepRun();tick();
   };
   $('#rf').onclick=()=>endRun(false);
   $('#ti')?.addEventListener('click',()=>guide(R.tech));
@@ -946,12 +948,12 @@ function journal(){
 function wrapForm(){
   window.UI?.runBar?.(null);
   const note=[R.intent&&`Intention: ${R.intent}`,journal()].filter(Boolean).join('\n\n');
-  dlg.innerHTML=`<form id="wf"><h3>SESSION DONE · ${fm(R.done)} ${KIND[R.kind].toUpperCase()}</h3>
+  dlg.innerHTML=`<form id="wf"><h3>Session done · ${fm(R.done)} ${KIND[R.kind].toLowerCase()}</h3>
   ${rpick('pre','State before',R.pre)}${rpick('post','State after')}${rpick('depth','Depth')}
   <label>Note / journal<textarea name="note" rows="${R.kind==='J'?8:4}" placeholder="What came up.">${esc(note)}</textarea></label>
-  <div class="fa2"><span id="pv"></span><button type="button" class="ghost" id="wd">DISCARD</button><button class="pri">SAVE</button></div></form>`;
+  <div class="fa2"><span id="pv"></span><button type="button" class="ghost" id="wd">Discard</button><button class="pri">Save</button></div></form>`;
   const f=$('#wf');
-  const sync=()=>{const a=rval('pre'),b=rval('post');$('#pv').innerHTML=a!=null&&b!=null?`SHIFT <b class="${cls(b-a)}">${sg(b-a,1)}</b>`:''};
+  const sync=()=>{const a=rval('pre'),b=rval('post');$('#pv').innerHTML=a!=null&&b!=null?`Shift <b class="${cls(b-a)}">${sg(b-a,1)}</b>`:''};
   f.addEventListener('input',sync);sync();
   $('#wd').onclick=async()=>{if(await UI.confirm({title:'Discard this session?',body:'It ends without being logged.',ok:'Discard',cancel:'Keep it',danger:true})){clearRun();dlg.close()}};
   f.addEventListener('submit',ev=>{
@@ -963,8 +965,8 @@ function wrapForm(){
 }
 
 function noteForm(day){
-  dlg.innerHTML=`<form id="nf"><h3>NOTES · ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Intention. What came up. What to carry into tomorrow.">${esc(S.notes[day]||'')}</textarea>
-  <div class="fa2"><button type="button" data-a="x">CANCEL</button><button class="pri">SAVE</button></div></form>`;
+  dlg.innerHTML=`<form id="nf"><h3>Notes · ${dlabel(day)}</h3><textarea name="n" rows="10" placeholder="Intention. What came up. What to carry into tomorrow.">${esc(S.notes[day]||'')}</textarea>
+  <div class="fa2"><button type="button" data-a="x">Cancel</button><button class="pri">Save</button></div></form>`;
   $('#nf').addEventListener('submit',ev=>{ev.preventDefault();const v=ev.target.elements.n.value.trim();if(v)S.notes[day]=v;else delete S.notes[day];save();dlg.close();render()});
   dlg.showModal();
 }
@@ -1151,10 +1153,10 @@ function reviewForm(day){
   const D=rvDays();if(!D.length)return toast('No sessions to review yet');
   day=D.includes(day)?day:rvDefault();const i=D.indexOf(day);
   dlg.classList.add('rvd');dlg.addEventListener('close',()=>dlg.classList.remove('rvd'),{once:true});
-  dlg.innerHTML=`<div class="rvh"><h3>DAILY REVIEW · ${dlabel(day).toUpperCase()}</h3>
+  dlg.innerHTML=`<div class="rvh"><h3>Daily review · ${dlabel(day)}</h3>
     <button type="button" data-a="rvgo" data-v="${D[i-1]||''}" ${i>0?'':'disabled'} aria-label="Previous practice day">&lt;</button><button type="button" data-a="rvgo" data-v="${D[i+1]||''}" ${i<D.length-1?'':'disabled'} aria-label="Next practice day">&gt;</button></div>
     <div id="rvb">${review(day)}</div>
-    <div class="fa2"><span><button type="button" data-a="rvcopy">COPY</button></span><button type="button" data-a="rvnote" data-v="${day}">WRITE NOTES</button><button type="button" class="pri" data-a="x">DONE</button></div>`;
+    <div class="fa2"><span><button type="button" data-a="rvcopy">Copy</button></span><button type="button" data-a="rvnote" data-v="${day}">Write notes</button><button type="button" class="pri" data-a="x">Done</button></div>`;
   if(!dlg.open)dlg.showModal();
   dlg.querySelector('#rvb').scrollTop=0;dlg.scrollTop=0;
 }
@@ -1167,15 +1169,15 @@ function reviewText(){
 
 /* ---------- settings: everything that used to sit in the footer, behind the header's SETTINGS button ---------- */
 function settingsForm(){
-  dlg.innerHTML=`<h3>SETTINGS</h3>
+  dlg.innerHTML=`<h3>Settings</h3>
   <div class="ui-set">
     <div><span><b>Weekly goal</b><small>Mindful minutes a week</small></span><select data-f="goal" aria-label="Weekly goal">${[35,70,105,140,210,300].map(v=>`<option value="${v}"${v===S.goal?' selected':''}>${hm(v)}</option>`).join('')}</select></div>
     ${UI.appearance()}
-    <div><span><b>Sync</b><small>${window.ISXSync?.state==='ok'?'On · this app syncs across your devices':'Keep every app the same on all your devices'}</small></span><span class="ui-set-btns"><button type="button" data-a="sync">SYNC…</button></span></div>
-    <div><span><b>Backup</b><small>Saved on this device. Download a copy, or restore one.</small></span><span class="ui-set-btns"><button type="button" data-a="bak">BACKUP JSON</button><button type="button" data-a="imp">RESTORE</button></span></div>
-    <div><span><b>Delete everything</b><small>Removes all of this app's data on this device.</small></span><span class="ui-set-btns"><button type="button" class="ui-danger" data-a="clear">CLEAR ALL</button></span></div>
+    <div><span><b>Sync</b><small>${window.ISXSync?.state==='ok'?'On · this app syncs across your devices':'Keep every app the same on all your devices'}</small></span><span class="ui-set-btns"><button type="button" data-a="sync">Sync…</button></span></div>
+    <div><span><b>Backup</b><small>Saved on this device. Download a copy, or restore one.</small></span><span class="ui-set-btns"><button type="button" data-a="bak">Back up JSON</button><button type="button" data-a="imp">Restore</button></span></div>
+    <div><span><b>Delete everything</b><small>Removes all of this app's data on this device.</small></span><span class="ui-set-btns"><button type="button" class="ui-danger" data-a="clear">Clear all</button></span></div>
   </div>
-  <div class="fa2"><button type="button" class="pri" data-a="x">DONE</button></div>`;
+  <div class="fa2"><button type="button" class="pri" data-a="x">Done</button></div>`;
   dlg.showModal();
 }
 const ACT={
