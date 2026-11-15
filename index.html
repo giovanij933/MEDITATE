@@ -503,7 +503,7 @@ function calendar(){
   <div class="rowh"><div><p class="h">Practice calendar</p><div class="k">Mood shift this month</div><div class="big ${cls(tot)}">${sg(tot,1)}</div></div>
    <div>Better: <b class="pos">${wd}</b> &nbsp; Worse: <b class="neg">${ld}</b></div></div>
   <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun','Week'].map(d=>`<div class="dw">${d}</div>`).join('')}${h}</div>
-  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button></div>
+  <div class="calf"><div><button data-a="prev" aria-label="Previous month">&lt;</button> <b>${new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</b> <button data-a="next" aria-label="Next month">&gt;</button> <button data-a="tod">Today</button> <button data-a="week">Week</button></div>
    <span class="dim">${td} practice day${td===1?'':'s'} · ${nT} session${nT===1?'':'s'} · ${hm(mT)}</span></div></div>`;
 }
 
@@ -1186,7 +1186,46 @@ function settingsForm(){
   <div class="fa2"><button type="button" class="pri" data-a="x">Done</button></div>`;
   dlg.showModal();
 }
+/* ---------- weekly review (UI.weekReview: the same sheet, in the same order, in every app; ARCHITECTURE.md 2p) ----------
+   A week of practice: minutes against the weekly goal, the days practised, the mood shift, which practices and when, against the last 8 weeks. A day row shows that day in the page. TODAY's Your week opens it (act 'week'), and so does
+   the Week button under the calendar. */
+function weekRev(){
+  const W=UI.weekReview,{pl,hm,avg,wd,and,sg}=W.t,L=S.log.filter(e=>e&&e.at),day=e=>ymd(new Date(e.at)),mn=e=>+e.mins||0;
+  W({weeks:L.map(day),onDay:k=>{U.x={};U.range=k;U.page=0;setMonth(pd(k).getTime());render()},build:ws=>{
+    const ks=Array.from({length:7},(_,i)=>W.add(ws,i)),T=L.filter(e=>ks.includes(day(e))),by=k=>T.filter(e=>day(e)===k),sum=a=>a.reduce((x,e)=>x+mn(e),0);
+    if(!T.length)return {days:ks.map(k=>({k}))};
+    const min=sum(T),dd=ks.filter(k=>by(k).length),R=T.filter(e=>e.pre!=null&&e.post!=null),sh=R.length?avg(R.map(e=>e.post-e.pre)):null;
+    const better=R.filter(e=>e.post>e.pre).length,worse=R.filter(e=>e.post<e.pre).length,goal=S.goal||0;
+    // the 8 weeks before, and the weeks in a row at the goal
+    const wk={};L.forEach(e=>{const w=W.mon(day(e));wk[w]=(wk[w]||0)+mn(e)});const pw=Object.keys(wk).filter(w=>w<ws).sort().slice(-8),aw=avg(pw.map(w=>wk[w]));
+    let st=0;for(const w of Object.keys(wk).filter(w=>w<=ws).sort().reverse()){if(goal&&wk[w]>=goal)st++;else break}
+    const max=Math.max(...ks.map(k=>sum(by(k))),1);
+    const days=ks.map(k=>{const D=by(k),m=sum(D);return {k,n:D.length?[...new Set(D.map(e=>KIND[e.kind]||'Session'))].join(' · '):'',v:D.length?hm(m):'',bar:m/max,cls:D.length?'pos':''}});
+    const K={};T.forEach(e=>{const n=KIND[e.kind]||'Other',o=K[n]??={m:0,n:0,s:[]};o.m+=mn(e);o.n++;if(e.pre!=null&&e.post!=null)o.s.push(e.post-e.pre)});
+    const part=h=>h<12?'Morning':h<17?'Afternoon':'Evening',P={};T.forEach(e=>{const o=P[part(new Date(e.at).getHours())]??={m:0,s:[]};o.m+=mn(e);if(e.pre!=null&&e.post!=null)o.s.push(e.post-e.pre)});
+    const bk=Object.entries(K).filter(([,v])=>v.s.length>=2).sort((a,b)=>avg(b[1].s)-avg(a[1].s))[0],bt=Object.entries(P).filter(([,v])=>v.s.length>=2).sort((a,b)=>avg(b[1].s)-avg(a[1].s))[0];
+    const miss=ks.filter(k=>k<=ymd(new Date())&&!by(k).length),good=[],look=[],q=['What is my one focus for next week?'];
+    if(goal&&min>=goal)good.push(`I hit my weekly goal: <b>${hm(min)}</b> of ${hm(goal)}.`);
+    if(dd.length===7)good.push('I practised every day.');
+    if(sh!=null&&sh>=.5)good.push(`Sessions lifted my mood <b class="pos">${sg(sh)}</b> on average.`);
+    if(bk&&Object.keys(K).length>1)good.push(`${esc(bk[0])} did the most for my mood: <b class="${cls(avg(bk[1].s))}">${sg(avg(bk[1].s))}</b> over ${pl(bk[1].n,'session')}.`);
+    if(goal&&min<goal)look.push(`${hm(goal-min)} short of my ${hm(goal)} goal.`);
+    if(miss.length&&miss.length<7)look.push(`No practice on ${and(miss.map(wd))}.`);
+    if(worse)look.push(`${pl(worse,'session')} left me feeling worse. What was different?`);
+    if(aw!=null&&min<aw*.8)look.push(`Fewer minutes than my usual week (${hm(aw)}).`);
+    if(bk&&Object.keys(K).length>1)q.push(`What made ${esc(bk[0].toLowerCase())} work, and can I do more of it?`);
+    if(miss.length&&miss.length<7)q.push(`What got in the way on ${wd(miss[0])}?`);
+    if(bt)q.push(`Can I move more of my practice to the ${bt[0].toLowerCase()}?`);
+    q.push('One thing to repeat next week. One thing to cut.');
+    const more=[['Practices',`<p>${Object.entries(K).sort((a,b)=>b[1].m-a[1].m).map(([n,v])=>`${esc(n)} <b>${hm(v.m)}</b> (${pl(v.n,'session')})`).join(' · ')}.</p>`]];
+    if(Object.keys(P).length>1)more.push(['When',`<p>${['Morning','Afternoon','Evening'].filter(p=>P[p]).map(p=>`${p} <b>${hm(P[p].m)}</b>${P[p].s.length?`, mood ${sg(avg(P[p].s))}`:''}`).join(' · ')}.${bt?` My sessions did the most for my mood in the <b>${bt[0].toLowerCase()}</b>.`:''}</p>`]);
+    return {week:`I practised <b>${hm(min)}</b> over ${pl(T.length,'session')} on ${pl(dd.length,'day')}${goal?`: <b>${Math.round(min/goal*100)}%</b> of my ${hm(goal)} goal`:''}.${sh!=null?` My mood moved <b class="${cls(sh)}">${sg(sh)}</b> on average: ${better} of ${R.length} rated sessions felt better${worse?`, ${worse} worse`:''}.`:''}`,
+      context:aw!=null?`Over my last ${pl(pw.length,'week')} I averaged <b>${hm(aw)}</b> a week, so this week was ${min>aw*1.05?'<b>more</b> than usual':min<aw*.95?'<b>less</b> than usual':'<b>about usual</b>'}.${st>=2?` That's ${st} weeks in a row at my goal.`:''}`:'',
+      days,good,look,more,questions:q};
+  }});
+}
 const ACT={
+  week:()=>weekRev(),
   set:()=>settingsForm(),sync:()=>{dlg.close();document.getElementById('isx-sync')?.click()},
   add:()=>entryForm(),go:()=>R?(R.done==null?runView():wrapForm()):startForm(),imp:()=>$('#file').click(),x:()=>dlg.close(),sample,csv:exportCSV,
   note:()=>noteForm(U.range in RANGES?ymd(new Date()):U.range),
