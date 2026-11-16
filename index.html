@@ -1267,7 +1267,6 @@ $('#file').addEventListener('change',async e=>{
 
 function boot(){setMonth(S.log.length?Math.max(...S.log.map(t=>t.at)):Date.now());render()}
 boot();
-window.UI?.backdrop?.({tint:['--accent','--info','--info']});   // ARCHITECTURE.md 2m
 UI.planner('mind',[KEY,RUN],plan);
 if(R)R.done==null?runView():wrapForm();
 // a session logged from another app (REWIRE) lands in storage while this page is open: pick it up instead of overwriting it
