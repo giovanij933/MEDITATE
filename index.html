@@ -1152,7 +1152,7 @@ function review(day){
   out+=sec('What went well',good.length?`<ul>${good.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<p>Nothing stands out in the numbers. Showing up still counts.</p>');
   out+=sec('What to look at',look.length?`<ul>${look.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<p>No warning signs in the numbers.</p>');
   // the morning check-in for this date, when there is one
-  let ci=null;try{ci=(JSON.parse(localStorage.getItem('isx.checkin.v1'))?.log||[]).find(e=>e.day===day)}catch(e){}
+  let ci=UI.checkins().log.find(e=>e.day===day)||null;   // through UI.checkins: typed fields, never stored text as it is
   if(ci){const Qs=['','poor','restless','OK','good','great'],E=['','drained','low','steady','good','charged'];
     out+=sec('My state',`<p>I slept <b>${ci.sleep} h</b> (${Qs[ci.q]||'—'} sleep) and my energy was <b>${E[ci.energy]||'—'}</b>.${ci.sleep<7&&low?' Short sleep and a smaller lift than usual: worth watching if it repeats.':''}</p>`)}
   out+=sec('My notes',S.notes[day]?`<blockquote>${esc(S.notes[day])}</blockquote>`:'<p>No notes for this day yet.</p>');
