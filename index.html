@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-vtbDO042/giDCdir93hkeyV4AKDZVdbSINpMjwkQBns=' 'sha256-FjVwrRj9GxAPfiRoLwWLPBoFHAqwaBTbdfgE9KFYRBo='; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-vtbDO042/giDCdir93hkeyV4AKDZVdbSINpMjwkQBns=' 'sha256-K3yMv2011FDIyB2Ssr6f9Ot+Kfw+iShUOXCFYPAn80A='; object-src 'none'; base-uri 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
@@ -818,10 +818,13 @@ function suggest(only,h=new Date().getHours()){
   return byAge([...ks],k=>e=>e.kind===k).map((p,n)=>{const t=techs(p.x)[0];return {kind:p.x,tech:t.x,mins:usual(p.x),tod:part,kat:p.at,tat:t.at,n}});
 }
 const ago=t=>{const d=Math.round((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/864e5);return d<1?'today':d<2?'yesterday':d+' days ago'};
-const lr=s=>`${s.n?['2nd','3rd','4th'][s.n-1]||s.n+1+'th':''} least recent`.trim();
-const why=s=>!s.kat?`New for you: ${KIND[s.kind]} · ${s.tech} — suits the ${s.tod}`
-  :s.only?(s.tat?`${KIND[s.kind]} · ${s.tech} — your ${lr(s)} ${KIND[s.kind]} technique (last: ${ago(s.tat)})`:`New for you: ${s.tech}`)
-  :`${KIND[s.kind]} · ${s.tech} — ${s.tat?'your':'new for you, in your'} ${lr(s)} ${s.tod} practice (last: ${ago(s.kat)})`;
+// why START suggests this one, in plain words, as TODAY's plan says it: new to you, or when you last did it. The rule
+// underneath is unchanged (the least recent first, so every practice comes round; Another steps to the next one)
+const why=s=>{const k=KIND[s.kind],head=`${k} · ${s.tech}`;
+  if(!s.kat)return `${head} — new to you, and good for the ${s.tod}`;
+  if(s.only)return `${head} — ${s.tat?`last done ${ago(s.tat)}`:'a technique you haven’t tried'}`;
+  if(!s.tat)return `${head} — a technique you haven’t tried · ${k.toLowerCase()} last done ${ago(s.kat)}`;
+  return `${head} — ${s.n?`another ${s.tod} practice`:`the ${s.tod} practice you’ve gone longest without`}, last done ${ago(s.kat)}`};
 // TODAY's plan card: START's first suggestion for each part of the day, and whether you practiced today already.
 // A name too long for the title moves the practice to the line below.
 function plan(){
