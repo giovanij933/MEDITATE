@@ -831,9 +831,11 @@ function plan(){
   const last=done&&S.log.filter(e=>ymd(new Date(e.at))===t&&window.TQG?.get(e.tech)).sort((a,b)=>b.at-a.at)[0],did=last&&TQG.art(last.tech,PACE[last.tech]);
   return TOD.map(([,h0,h1])=>{
     const s=suggest(null,h0)[0],k=KIND[s.kind],full=`${k} · ${s.tech}`,long=full.length>28,pre=`${long?k+' · ':''}${s.mins} min · `;
-    const w=!s.kat?`new for you · suits the ${s.tod}`:`${s.tat?'':'new technique · '}least recent ${s.tod} practice`;
+    // why this one, in plain words: it's new to you, or when you last did it (the technique; for a technique you haven't
+    // tried, the practice). The rule underneath is START's: the least recent, so every practice comes round
+    const w=!s.kat?'new to you':!s.tat?`new technique · ${long?'':k.toLowerCase()+' '}last done ${ago(s.kat)}`:`last done ${ago(s.tat)}`;
     // art: the technique's picture, for TODAY's plan (techniques.js)
-    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+((pre+w).length>64?`least recent ${s.tod} practice`:w),act:'plan',done,art:did||window.TQG?.art(s.tech,PACE[s.tech])||undefined};
+    return {h0,h1:h1%24,title:long?s.tech:full,sub:pre+w,act:'plan',done,art:did||window.TQG?.art(s.tech,PACE[s.tech])||undefined};
   });
 }
 
